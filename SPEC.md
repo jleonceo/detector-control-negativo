@@ -4,7 +4,7 @@
 > criterios de aceptación son lo que hace comprobable el resto: sin ellos, «el detector funciona»
 > es una opinión.
 
-## El problema que resuelve, y no es el que parece
+## El problema que resuelve
 
 Un banco de pruebas que solo comprueba que lo bueno pasa da verde con el código bueno y con el
 roto. Saber cuántos hay así es útil. La primera vez que se intentó salió mal de una forma que
@@ -26,19 +26,25 @@ quedó en disco, así que volver a preguntar la cifra obligaba a repetir la inve
 **De ahí los dos requisitos que ordenan todo lo demás:** el contador vive en disco, y el criterio
 se puntúa contra una verdad de referencia en vez de juzgarse por el tamaño de su resultado.
 
-## Población: los tres números, siempre
+## Población: siempre los tres números
 
 El informe declara **tres** cifras y nunca una: lo que hay, lo que ha decidido dejar fuera, y con
 qué criterio. Decir «131 bancos» sin lo demás es lo que hace que una cifra parezca más firme de lo
 que es.
+
+Y ese ejemplo no está elegido al azar. El 131 de la fila v1 de la tabla de arriba y el 131 de este
+universo declarado se escriben igual y cuentan objetos distintos: en la primera pasada los
+agregadores iban dentro del recuento y la exclusión de copias no existía. Dos cifras iguales sobre
+el mismo árbol, con dos poblaciones detrás, es la forma más barata de fabricar una serie que
+parece continua.
 
 - **Universo:** ficheros versionados en git (`git ls-files`) cuyo nombre encaja con `test_*.py`,
   `run_tests*.py` o `*_test.py`.
 - **Fuera a propósito:** lo que no está versionado (carpetas de trabajo, `__pycache__`, copias) y
   lo que se declare con `--excluir`, pensado para las copias de un repositorio que ya se mide en
   su origen.
-- **Criterio:** el nombre, no el contenido. Un banco que no se llame así no entra, y eso es un
-  suelo declarado y no un descuido.
+- **Criterio:** el nombre y no el contenido. Un banco que no se llame así no entra. Es un suelo
+  declarado y no un descuido.
 
 ## Señales: qué cuenta como brazo negativo
 
@@ -56,7 +62,7 @@ cifra vuelve a ser un contador sin su objeto y nadie puede comprobarla.
 Un banco tiene brazo negativo si dispara **al menos una**. La lista es ampliable; lo que no es
 ampliable sin pagar el precio es añadir una señal y quedarse con el número nuevo sin puntuarlo.
 
-## La verdad de referencia, que es la pieza nueva
+## La verdad de referencia es la pieza nueva
 
 El fichero de etiquetas guarda bancos etiquetados **a mano**, cada uno con:
 
@@ -82,7 +88,7 @@ el mismo error de objeto que costó dos de las cifras de la tabla de arriba.
    su ruta; cada banco con brazo negativo sale con la señal que disparó.
 3. **CA3 · el detector se mide contra las etiquetas** y publica su acuerdo con ellas. Sin
    etiquetas, lo dice y no finge una puntuación.
-4. **CA4 · el código de salida habla del INSTRUMENTO, no del repositorio.** `0` concuerda con
+4. **CA4 · el código de salida habla del INSTRUMENTO y no del repositorio.** `0` concuerda con
    todas las etiquetas, `1` discrepa de alguna, `2` no hay etiquetas con las que medirse. El
    recuento de bancos se **reporta** y no tumba nada: actuar sobre una cifra que no ha convergido
    es justo el error que este detector existe para no repetir.
@@ -92,7 +98,7 @@ el mismo error de objeto que costó dos de las cifras de la tabla de arriba.
 6. **CA6 · determinista y sin red.** Ni modelo de lenguaje ni consultas externas. Dos ejecuciones
    seguidas sobre el mismo árbol dan el mismo resultado.
 
-## La regla de parada, que es lo que evita repetir el fallo
+## La regla de parada evita repetir el fallo
 
 **Una señal nueva entra solo cuando un caso ETIQUETADO la exige, y se declara qué caso.** No
 cuando se le ocurre a alguien que podría existir, y desde luego no porque baje el recuento.

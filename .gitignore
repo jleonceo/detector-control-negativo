@@ -6,3 +6,9 @@ __pycache__/
 # El paso de CI que comprueba las cifras del README vuelca la salida aqui para poder mirarla
 # dos veces. Es un fichero de trabajo del runner y no tiene por que llegar al repositorio.
 salida.txt
+
+# La copia intacta que `mutar.py` deja en disco mientras sabotea el detector. En una ejecucion
+# normal se borra al terminar; si el proceso muere a mitad, se queda y la ejecucion siguiente
+# repara desde ella. Sin declararla aqui, ese resto disparaba por si solo la comprobacion de
+# «arbol limpio» del gate de publicacion, y eso ya lo canta el objetivo saliendo como modificado.
+*.intacto

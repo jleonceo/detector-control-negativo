@@ -19,6 +19,15 @@ no aparece en el fichero (porque alguien renombro una constante), esa mutacion n
 un mutador ingenuo la contaria como «cazada» sin haber cambiado una coma. Aqui eso sale con
 ERROR y tumba la ejecucion: un arnes que aprueba sin haber mordido no es un arnes.
 
+Y DEVUELVE EL FICHERO BYTE A BYTE, que hasta el 30/07/2026 no hacia. Leia con saltos de linea
+universales y escribia con `newline=""`, asi que en un clon de Windows (`core.autocrlf=true`)
+la restauracion dejaba 387 lineas en LF sobre un fichero que estaba en CRLF: 18.362 bytes
+antes, 17.975 despues, y `git status` marcando el detector como modificado. Este es el segundo
+comando que manda ejecutar el README, y la primera comprobacion del gate de publicacion es
+«arbol limpio», o sea que el gate se ponia rojo por hacer lo que el README pide. Ahora la copia
+va y vuelve en binario y la restauracion se RELEE para exigirla byte a byte antes de anunciarla:
+la unica forma de que «queda restaurado» no sea una promesa es comprobarlo.
+
 Uso:
     python mutar.py
     python mutar.py --ver 3      # imprime la salida del banco para la mutacion 3
@@ -35,7 +44,10 @@ BANCO = os.path.join(AQUI, "test_detector_control_negativo.py")
 
 # La copia intacta vive en DISCO y no en la memoria de este programa. Si alguien mata el
 # proceso a mitad, la ejecucion siguiente repara desde aqui en vez de dejar el detector
-# saboteado para siempre.
+# saboteado para siempre. Va declarada en `.gitignore` (`*.intacto`): es un fichero de trabajo
+# de esta herramienta, y sin declararla disparaba ella sola la comprobacion de «arbol limpio»
+# del gate de publicacion. Que una ejecucion se haya muerto a mitad ya lo canta el objetivo
+# saliendo como modificado, asi que la copia no aportaba esa senal, solo el falso rojo.
 INTACTO = OBJETIVO + ".intacto"
 
 # (id, que rompe, ancla, sustitucion, quien deberia cazarlo)
@@ -68,14 +80,42 @@ MUTACIONES = [
 ]
 
 
-def _leer(path):
-    with open(path, encoding="utf-8") as fh:
+# EL FICHERO MEDIDO SE MANEJA EN BINARIO. La copia buena son los bytes tal cual, y de ahi sale
+# todo lo demas. La via de texto era la que perdia los finales de linea, y con una funcion que
+# lee texto no hay manera de restaurar lo que habia: cuando llega el momento de escribir, la
+# informacion ya se perdio al leer.
+def _leer_bytes(path):
+    with open(path, "rb") as fh:
         return fh.read()
 
 
-def _escribir(path, texto):
-    with open(path, "w", encoding="utf-8", newline="") as fh:
-        fh.write(texto)
+def _escribir_bytes(path, datos):
+    with open(path, "wb") as fh:
+        fh.write(datos)
+
+
+def _texto_y_salto(datos):
+    """El contenido con los saltos normalizados, y el salto de linea que traia el fichero.
+
+    Las dos cosas, y por separado, porque cada una hace falta para algo distinto. Las anclas de
+    las mutaciones estan escritas con el salto en `\\n`, asi que la busqueda tiene que ir sobre
+    texto normalizado o en un clon de Windows no encontraria ninguna y las seis saldrian como
+    «el ancla no aparece en el fichero». La escritura, en cambio, tiene que devolver el salto que
+    habia.
+    """
+    texto = datos.decode("utf-8")
+    salto = "\r\n" if "\r\n" in texto else "\n"
+    return texto.replace("\r\n", "\n"), salto
+
+
+def _a_bytes(texto, salto):
+    """El texto de vuelta a los bytes que tocan, con el salto original.
+
+    Sirve para la restauracion y tambien para el fichero SABOTEADO. Si la mutacion cambiara
+    ademas los 387 finales de linea, un `git diff` durante la ejecucion (o despues de una que se
+    muera a mitad) saldria con el fichero entero cambiado y ahi no se ve cual era el sabotaje.
+    """
+    return texto.replace("\n", salto).encode("utf-8")
 
 
 def _lanzar_banco():
@@ -99,7 +139,8 @@ def main(argv=None):
         shutil.copyfile(INTACTO, OBJETIVO)
         os.remove(INTACTO)
 
-    original = _leer(OBJETIVO)
+    original_bytes = _leer_bytes(OBJETIVO)
+    original, salto = _texto_y_salto(original_bytes)
 
     print("=" * 78)
     print("MUTACION  --  %d sabotajes contra el banco del detector" % len(MUTACIONES))
@@ -132,7 +173,7 @@ def main(argv=None):
                 errores.append((num, que))
                 print("  %d. ERROR: la sustitucion no cambio nada" % num)
                 continue
-            _escribir(OBJETIVO, mutado)
+            _escribir_bytes(OBJETIVO, _a_bytes(mutado, salto))
             codigo, salida = _lanzar_banco()
             if args.ver == num:
                 print(salida)
@@ -145,9 +186,21 @@ def main(argv=None):
                 print("  %d. ESCAPA   %s" % (num, que))
                 print("             deberia cazarla: %s" % quien)
     finally:
-        _escribir(OBJETIVO, original)
+        _escribir_bytes(OBJETIVO, original_bytes)
         if os.path.isfile(INTACTO):
             os.remove(INTACTO)
+
+    # LA RESTAURACION SE COMPRUEBA ANTES DE ANUNCIARLA. Este programa imprimia «el fichero medido
+    # queda restaurado» sin haberlo mirado, y durante meses fue mentira en Windows. Releer el
+    # fichero cuesta un `open` y convierte la frase de abajo en un hecho.
+    devuelto = _leer_bytes(OBJETIVO)
+    if devuelto != original_bytes:
+        print()
+        print("  >> LA RESTAURACION NO DEVOLVIO EL FICHERO BYTE A BYTE: %d bytes antes, %d ahora."
+              % (len(original_bytes), len(devuelto)))
+        print("     El recuento de mutaciones no se publica, porque el fichero medido no es el")
+        print("     que habia. Devuelvelo con: git checkout -- %s" % os.path.basename(OBJETIVO))
+        return 2
 
     print()
     print("-" * 78)
@@ -171,8 +224,8 @@ def main(argv=None):
         return 1
 
     print()
-    print("  >> Los %d sabotajes se cazan, sin un hueco. El fichero medido queda restaurado."
-          % len(MUTACIONES))
+    print("  >> Los %d sabotajes se cazan, sin un hueco. El fichero medido queda restaurado byte"
+          " a byte, y comprobado." % len(MUTACIONES))
     return 0
 
 

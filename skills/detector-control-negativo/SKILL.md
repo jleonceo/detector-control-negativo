@@ -31,9 +31,9 @@ metadata:
 > criterio medía un objeto distinto.** Una cifra que solo baja conforme se mira mejor no ha
 > convergido en ninguna parada anterior, y en las tres primeras se habría actuado sobre ella.
 
-## Lo primero, y no es el recuento
+## Lo primero no es el recuento
 
-**El código de salida habla del INSTRUMENTO, no del repositorio.** Esto se dice antes que
+**El código de salida habla del INSTRUMENTO y no del repositorio.** Esto se dice antes que
 cualquier número porque es lo que cambia la forma de usar la herramienta:
 
 | salida | qué significa |
@@ -66,7 +66,7 @@ python ${CLAUDE_SKILL_DIR}/verificar_control_negativo.py --raiz . --etiquetar
 hay etiquetas, y sin ellas el recuento es una aproximación sin puntuar. El camino es
 `--etiquetar`, abrir a mano los ficheros que salgan, y escribir la etiqueta con su evidencia.
 
-## El orden del trabajo, que es lo que evita repetir el fallo
+## El orden del trabajo
 
 1. **Ejecutar y mirar los tres números**, nunca solo el primero: bancos con casos propios,
    agregadores y excluidos, con el criterio del universo declarado. Decir «131 bancos» sin lo
@@ -79,8 +79,13 @@ hay etiquetas, y sin ellas el recuento es una aproximación sin puntuar. El cami
    cuando a alguien se le ocurre que podría existir, y desde luego no porque baje el recuento.
 5. **Si el detector discrepa de las etiquetas, se arregla el criterio.** Acomodar la verdad de
    referencia al instrumento es lo único que está prohibido de raíz.
+6. **Al publicar la cifra, publicar el comando entero al lado**: la raíz, cada `--excluir` con su
+   subcadena, la fecha con la hora y el commit del árbol. Una exclusión que se sobreentiende
+   cambia el denominador sin dejar rastro. Entonces el número no lo puede reproducir nadie,
+   empezando por quien lo escribió. Lo firme de una pasada es la concordancia con las etiquetas,
+   que se mide contra un objeto quieto; el recuento es una foto de ese árbol a esa hora.
 
-## Las señales, y por qué cada una es estrecha
+## Cada señal es estrecha a propósito
 
 | señal | qué reconoce |
 |---|---|

@@ -49,10 +49,26 @@ BANCOS SIN CONTROL NEGATIVO
 
   >> El detector concuerda con todas las etiquetas.
      Bancos sin control negativo hoy: 2 de 8.
+     La cifra se REPORTA y no tumba nada: en el arbol donde nacio bajo de 112 a
+     ~10 en cinco pasadas, o sea que actuar sobre ella sin anclarla sale caro.
 ```
 
-Los dos bancos señalados están plantados a propósito en `ejemplo/bancos/`, con su etiqueta al
-lado. El resto del universo es el propio banco de la herramienta y seis fixtures, uno por señal.
+Ese bloque son las 32 líneas que imprime el comando, sin quitar ninguna. Las dos últimas las dice el
+propio programa en cada ejecución, para que la advertencia no dependa de que alguien se acuerde de
+escribirla. Recortarlas al pegar la salida deja el recuento con más autoridad de la que tiene.
+
+**Los ocho bancos de `ejemplo/bancos/` están plantados a propósito, uno a uno, con su etiqueta al
+lado.** Dos sin brazo negativo, que son los dos que el informe señala; cinco con brazo negativo,
+uno por cada señal; y un agregador, para el tercer valor de la etiqueta. El noveno banco del
+universo es el de la propia herramienta. Ese «2 de 8» describe un árbol de juguete, construido para
+que cada veredicto se pueda comprobar leyendo el fichero. De la calidad de los tests de nadie no
+dice nada.
+
+Son el material que el detector MIDE, así que varias de esas fixtures invocan símbolos que no
+existen a propósito y se caerían si alguien las ejecutara como pruebas. Se llaman `test_*.py` porque
+el criterio del detector es el nombre del fichero, y renombrarlas las sacaría de su propia medición.
+La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge 30
+pruebas, las 30 del banco del detector, y sale verde sin tocar una sola fixture.
 
 [Español](#español) · [English](#english)
 
@@ -63,7 +79,9 @@ lado. El resto del universo es el propio banco de la herramienta y seis fixtures
 ### El problema
 
 Una suite verde demuestra que el código pasa sus casos. No demuestra que la suite sepa separar el
-código bueno del roto, y eso es otra pregunta.
+código bueno del roto.
+
+Esa es otra pregunta.
 
 El caso más común es un banco que comprueba solo el camino bueno: se le pasa una entrada
 correcta, se comprueba que sale el resultado correcto, y ahí acaba. Ese banco da verde. Y sigue
@@ -81,6 +99,36 @@ así:
 | v3 | esperar cero, lista vacía, nombres `_no_` y `_sin_` | 48 |
 | v4 | el helper propio que envuelve la aserción | 31 |
 | revisión a mano | 3 casos abiertos, 2 tenían control negativo | ~10 |
+| criterio de hoy, puntuado contra 30 etiquetas | el instrumento de este repositorio | 3 de 131 |
+
+**La última fila es una parada más de la serie y no su conclusión. Por eso está aquí abajo y no en
+la portada.** Se midió el 30/07/2026 a las 15:04 sobre ese mismo árbol privado, en su commit
+`e86c67d`, con este comando:
+
+```bash
+python skills/detector-control-negativo/verificar_control_negativo.py \
+  --raiz <la raiz de ese arbol privado> \
+  --excluir /candidato_repo/ \
+  --etiquetas etiquetas_control_negativo.yaml
+```
+
+Los tres bancos son `Aplicaciones/05_capa_confianza_rag/suite_aceptacion/test_c11_determinismo.py`,
+`evals/run_tests_contrato_skills.py` y
+`pipeline/eval_suite/evaluador/test_clasificador_motivo.py`. Van con la cifra porque un 3 a secas
+no se puede auditar.
+
+Tres cosas que hay que saber para leer esa fila, y ninguna es un detalle:
+
+1. **Ese comando no lo puede teclear quien lea esto.** El árbol es privado y no viaja en el
+   repositorio. Lo que se publica es el método en vez de un resultado comprobable desde fuera.
+2. **Sin `--excluir /candidato_repo/` el mismo comando sobre el mismo árbol devuelve 134 y no
+   131.** En el árbol privado esa exclusión es una constante dentro del script y sale sola; el
+   instrumento que se publica la pide por bandera. Una exclusión que se sobreentiende cambia el
+   denominador sin dejar rastro.
+3. **Los dos «131» de la tabla no son el mismo objeto.** El de la fila v1 es el universo sin
+   separar: aquel día los agregadores iban dentro y la exclusión no existía. El de la última fila
+   son 131 bancos con casos propios **más** 5 agregadores **más** 3 excluidos. Y el denominador se
+   movió ese mismo día: entraron tres bancos al árbol a las 12:34, a las 13:02 y a las 14:18.
 
 **Ninguna versión estaba mal programada.** Cada afinado medía un objeto distinto, y cada uno daba
 menos que el anterior. Una cifra que solo baja conforme se mira mejor no ha convergido en ninguna
@@ -111,7 +159,7 @@ los falsos negativos es peor, aunque el titular quede mejor.
 Y la etiqueta se escribe **antes** de afinar el criterio, a propósito. Al revés, la etiqueta se
 acomoda al instrumento y la medición deja de valer.
 
-`tiene_control_negativo` tiene un tercer valor, `agregador`, y no es un adorno: hay ficheros que
+`tiene_control_negativo` tiene un tercer valor, `agregador`. No es un adorno: hay ficheros que
 se llaman como un banco y no tienen un solo caso propio, porque descubren otros y los lanzan.
 Contarlos entre los carentes es contar el objeto equivocado, y en la primera pasada cinco de los
 veinticuatro señalados eran justo eso.
@@ -133,7 +181,7 @@ Y el `3` es igual de deliberado. Fuera de un repositorio de git no hay universo,
 bancos sin control negativo» ahí sería el falso verde de manual: el mensaje más tranquilizador
 posible producido por no haber mirado nada.
 
-### Las señales, y por qué cada una es estrecha
+### Por qué cada señal es estrecha
 
 | señal | qué reconoce |
 |---|---|
@@ -143,15 +191,16 @@ posible producido por no haber mirado nada.
 | `NOMBRE_NEG` | nombres de caso con `_no_`, `_sin_`, `rechaza`, `bloquea`, `falla`, `invalido` |
 | `ETIQUETA_NEG` | la etiqueta del caso declara el brazo negativo, o afirma el veredicto malo |
 
-Basta una para que el banco cuente como cubierto. Dos precauciones que costaron tiempo y viven
-dentro del código:
+Basta una para que el banco cuente como cubierto.
+
+Dos precauciones que costaron tiempo y viven dentro del código:
 
 **`ESPERA_CERO` mira la forma de la condición y no el nombre de la función que la envuelve.** Un
 proyecto con su propio helper (`check(...)`) no tiene un solo `assertFalse` en todo el árbol, y
 sin esta señal sus bancos salían como carentes. Fue uno de los dos falsos positivos que destapó
 la revisión a mano.
 
-**Las señales de texto se buscan donde toca, y no en cualquier cadena.** La primera versión
+**Las señales de texto se buscan donde toca y no en cualquier cadena.** La primera versión
 miraba «no» y «sin» dentro de todo el fichero y **disparaba en 129 bancos de 129**. Una señal que
 marca al 100 % de la población no separa nada: solo baja el recuento, que es como se fabrica una
 cifra que parece mejor y mide peor. Se cazó porque el informe imprime el reparto por señal; con
@@ -166,7 +215,7 @@ presumir de suite verde: se rompe el código a mano y se mira si alguien se quej
 - **Dos mordieron limpio.** Al romper el reconocimiento de agregadores (el fallo que en la primera
   pasada confundió 5 de 24) cayó el caso que compara el detector con las etiquetas, y cayó
   señalando con nombre y apellido el banco mal clasificado.
-- **Dos no rompieron nada, y ahí estaba el agujero.** Al borrar el literal `_CN_` del
+- **Dos no rompieron nada. Ahí estaba el agujero.** Al borrar el literal `_CN_` del
   reconocimiento de la marca, y al borrar los nombres `_no_` y `_sin_` de la señal de nombre,
   **no cayó ni un test**. Cada una de esas dos formas dependía en exclusiva de un único banco del
   árbol medido, y ninguno de esos dos bancos estaba en el fichero de etiquetas. Un banco de 24
@@ -174,7 +223,15 @@ presumir de suite verde: se rompe el código a mano y se mira si alguien se quej
   enterase. La señal de nombre no es un detalle: es la que más peso tiene en el recuento.
 
 Se cerró antes de tocar el repositorio, con **dos casos nuevos que aíslan cada una de las dos
-formas** de cualquier otra señal que pudiera taparlas. El banco pasó de 24 a 26 casos.
+formas** de cualquier otra señal que pudiera taparlas.
+
+El banco pasó de 24 a 26 casos.
+
+Los cuatro que faltan hasta los 30 de hoy los añadió el empaquetado, y cada uno cubre una pieza
+que en el árbol privado no existía o estaba clavada dentro del script: que los bancos plantados a
+propósito se cacen, que ningún banco de este repositorio se quede sin etiqueta, que la raíz de git
+no se invente cuando no hay ninguna, y que la exclusión declarada saque las rutas y las cuente
+aparte. El comando de verificación de más abajo los enumera al ejecutarse.
 
 Eso obliga a decir algo incómodo de la propia herramienta: **este detector cuenta qué bancos
 tienen un brazo negativo, y tener un brazo negativo no es discriminar.** Un banco puede llevar
@@ -195,17 +252,26 @@ aplica, y un mutador ingenuo la contaría como cazada sin haber cambiado una com
 con ERROR y tumba la ejecución entera: un arnés que aprueba sin haber mordido no avala nada. Se
 comprobó en las dos direcciones, con un ancla inventada a mano.
 
-### Lo que da sobre un árbol de verdad, y con qué límites
+### Qué se puede comprobar desde fuera
 
-Medido el 30/07/2026 sobre un repositorio privado de 130 bancos con casos propios, 5 agregadores
-y 3 excluidos, con 30 etiquetas escritas a mano:
+**Esta página no te afirma ninguna cifra sobre el árbol privado.** El motivo no es que salga mal.
+Es que no la puedes comprobar: ese árbol no viaja en el repositorio y no hay comando que teclear
+para volver a medirlo. La última
+pasada está en la tabla del principio, con su comando, su fecha, su hora, su commit y los tres
+bancos con nombre y apellido, en la fila que la deja donde le toca: dentro de una serie que baja en
+cada afinado.
 
-- **3 bancos sin control negativo de 130.**
-- **El detector concuerda con las 30 etiquetas**, sin un falso positivo ni un falso negativo.
+Lo que sí puedes ejecutar es el ejemplo del principio, sobre este mismo repositorio y sin preparar
+nada. Da **9 etiquetas de 9 bancos, concordancia 9 de 9 y salida `0`**, y el «SIN control negativo
+2 de 8» que sale ahí describe el árbol de juguete de `ejemplo/bancos/`, plantado banco a banco.
 
-Ese árbol no viaja aquí, así que la cifra no es reproducible por quien lea esto: lo reproducible
-es el ejemplo del principio, que corre sobre este mismo repositorio. Y dos límites que hay que
-decir antes de que alguien cite el número:
+De la pasada sobre el árbol privado hay una sola cosa que este repositorio defiende, y es una
+propiedad del instrumento y no del árbol: **el detector concordó con las 30 etiquetas escritas a
+mano, 30 de 30**, sin un falso positivo ni un falso negativo. Eso se mide contra un objeto que no
+se mueve, mientras el recuento se mide contra un árbol al que ese día le entraron tres bancos. Es
+la diferencia entre las dos cifras, y es toda la tesis de la herramienta.
+
+Y dos límites que hay que decir antes de que alguien cite el número de la tabla:
 
 1. **Las etiquetas negativas son pocas.** Tres casos de «no lo tiene» no permiten afirmar una tasa
    de falsos negativos. Lo que sí está medido es que la parte nueva del criterio no rescata ni un
@@ -231,8 +297,9 @@ python ../detector-control-negativo/skills/detector-control-negativo/verificar_c
 
 La primera ejecución sale con `2` y está bien que lo haga: todavía no hay etiquetas, y sin ellas
 el recuento es una aproximación sin puntuar. El camino es `--etiquetar`, abrir a mano los ficheros
-que salgan, y escribir la etiqueta con su evidencia. Ese rato es el trabajo, y no hay atajo:
-medir un banco obliga a leerlo.
+que salgan, y escribir la etiqueta con su evidencia.
+
+Ese rato es el trabajo. No hay atajo: medir un banco obliga a leerlo.
 
 | Opción | Para qué |
 |---|---|
@@ -280,6 +347,12 @@ Python 3.9 o superior, biblioteca estándar, sin red y sin nada que instalar. En
 todo Linux el intérprete se llama `python3`, no `python`: los comandos de esta página van con
 `python` porque se escribieron en Windows.
 
+Esa frase habla del **instrumento**, y conviene apurarla porque el repositorio no cumple lo mismo
+que él. `verificar_control_negativo.py` y `mutar.py` no abren un socket: lo que necesitan se lo
+preguntan a `git` en local. El que sí sale a la red es `guardian_gemelo.py`, que consulta
+`api.github.com` para comparar este repositorio con su gemelo, y por eso trae una vía local con
+`GEMELO_LOCAL` para poder ejercitarlo sin ella. No forma parte de la skill ni de la medición.
+
 Ese 3.9 está **declarado y todavía no certificado**. En local solo se ha ejecutado con Python
 3.13 sobre Windows. Un repaso del código no encontró sintaxis ni biblioteca por encima de 3.9,
 pero eso encuentra incompatibilidades y no certifica compatibilidad. Lo que la certifica es la
@@ -310,7 +383,9 @@ no lo ha dado. Cuando lo dé, esta nota se corrige y no se borra.
 ### The problem
 
 A green suite proves the code passes its own cases. It does not prove the suite can tell working
-code from broken code, and that is a different question.
+code from broken code.
+
+That is a different question.
 
 The commonest case is a bench that only checks the happy path: feed it a valid input, assert the
 correct result, done. That bench is green. It stays green after somebody breaks input validation,
@@ -327,6 +402,37 @@ Counting how many benches are in that state looks like an afternoon's work. Here
 | v3 | expecting zero, an empty list, `_no_` and `_sin_` case names | 48 |
 | v4 | the project's own assertion helper | 31 |
 | by hand | 3 opened, 2 did have a negative control | ~10 |
+| today's criterion, scored against 30 labels | this repository's instrument | 3 of 131 |
+
+**That last row is one more stop on the series, not its conclusion, which is why it lives here and
+not at the top of the page.** It was measured on 30/07/2026 at 15:04 over that same private tree, at
+its commit `e86c67d`, with this command:
+
+```bash
+python skills/detector-control-negativo/verificar_control_negativo.py \
+  --raiz <the root of that private tree> \
+  --excluir /candidato_repo/ \
+  --etiquetas etiquetas_control_negativo.yaml
+```
+
+The three benches are
+`Aplicaciones/05_capa_confianza_rag/suite_aceptacion/test_c11_determinismo.py`,
+`evals/run_tests_contrato_skills.py` and
+`pipeline/eval_suite/evaluador/test_clasificador_motivo.py`. They travel with the figure because a
+bare 3 cannot be audited.
+
+Three things you need in order to read that row, and none of them is a detail:
+
+1. **You cannot type that command.** The tree is private and does not travel in the repository.
+   What gets published is the method rather than a result checkable from outside.
+2. **Without `--excluir /candidato_repo/` the same command over the same tree returns 134 and not
+   131.** In the private tree that exclusion is a constant inside the script and applies by itself;
+   the instrument that gets published asks for it by flag. An exclusion taken for granted moves the
+   denominator without leaving a trace.
+3. **The two «131» in the table are not the same object.** The one in row v1 is the undifferentiated
+   universe: aggregators went inside it that day and the exclusion did not exist. The one in the last
+   row is 131 benches with cases of their own **plus** 5 aggregators **plus** 3 excluded. And the
+   denominator moved that very day: three benches entered the tree at 12:34, at 13:02 and at 14:18.
 
 **No version was miscoded.** Each refinement measured a different object, and each returned less
 than the one before. A figure that only falls as you look harder has not converged at any earlier
@@ -357,7 +463,7 @@ raising false negatives is worse, however much better the headline reads.
 And the label is written **before** the criterion is tuned, deliberately. The other way round,
 the label accommodates the instrument and the measurement stops meaning anything.
 
-`tiene_control_negativo` takes a third value, `agregador`, and it is not decoration: some files
+`tiene_control_negativo` takes a third value, `agregador`. It is not decoration: some files
 are named like a bench and hold no case of their own, because they discover other benches and
 launch them. Counting those among the uncovered counts the wrong object, and in the first pass
 five of the twenty-four flagged files were exactly that.
@@ -379,7 +485,7 @@ The `3` is just as deliberate. Outside a git repository there is no universe, an
 benches without a negative control» there would be the textbook false green: the most reassuring
 message available, produced by having looked at nothing.
 
-### The signals, and why each one is narrow
+### Why each signal is narrow
 
 | signal | what it recognises |
 |---|---|
@@ -389,15 +495,16 @@ message available, produced by having looked at nothing.
 | `NOMBRE_NEG` | case names with `_no_`, `_sin_`, `rechaza`, `bloquea`, `falla`, `invalido` |
 | `ETIQUETA_NEG` | the case label declares the negative arm, or asserts the bad verdict |
 
-One is enough for the bench to count as covered. Two precautions that cost time and live inside
-the code:
+One is enough for the bench to count as covered.
+
+Two precautions that cost time and live inside the code:
 
 **`ESPERA_CERO` looks at the shape of the condition, not at the name of the function wrapping
 it.** A project with its own helper (`check(...)`) has no `assertFalse` anywhere in the tree, and
 without this signal its benches came out as uncovered. That was one of the two false positives
 the manual review exposed.
 
-**Text signals are looked for where they belong, and not inside any string.** The first version
+**Text signals are looked for where they belong and not inside any string.** The first version
 looked for «no» and «sin» across the whole file and **fired on 129 benches out of 129**. A signal
 that marks 100 % of the population separates nothing: it only lowers the count, which is how you
 manufacture a figure that looks better and measures worse. It was caught because the report
@@ -410,17 +517,25 @@ one verified to bite **before** looking at what the bench said. This is the oppo
 about a green suite: you break the code by hand and see whether anybody complains.
 
 - **Two bit cleanly.** Breaking aggregator recognition (the fault that misfiled 5 of 24 in the
-  first pass) brought down the case that compares the detector against the labels, and it fell
-  naming the misfiled bench.
-- **Two broke nothing, and that was the hole.** Deleting the `_CN_` literal from marker
+  first pass) brought down the case that compares the detector against the labels. It fell naming
+  the misfiled bench.
+- **Two broke nothing. That was the hole.** Deleting the `_CN_` literal from marker
   recognition, and deleting the `_no_` and `_sin_` names from the name signal, **took down not one
-  test**. Each of those two forms depended exclusively on a single bench in the measured tree, and
-  neither of those benches was in the label file. A 24-case bench, green, and two lines of the
+  test**. Each of those two forms depended exclusively on a single bench in the measured tree.
+  Neither of those benches was in the label file. A 24-case bench, green, and two lines of the
   criterion anyone could delete tomorrow with nobody noticing. The name signal is not a detail:
   it is the one carrying most weight in the count.
 
 It was closed before touching this repository, with **two new cases that isolate each of the two
-forms** from any other signal that could mask them. The bench went from 24 to 26 cases.
+forms** from any other signal that could mask them.
+
+The bench went from 24 to 26 cases.
+
+The four more up to today's 30 were added by the packaging, and each covers a piece that in the
+private tree either did not exist or sat nailed inside the script: that the deliberately planted
+benches get caught, that no bench of this repository goes unlabelled, that the git root is not
+invented where there is none, and that the declared exclusion drops the paths and counts them
+separately. The verification command further down lists them as it runs.
 
 Which forces an uncomfortable admission about the tool itself: **this detector counts which
 benches have a negative arm, and having a negative arm is not the same as discriminating.** A
@@ -441,17 +556,35 @@ and a naive mutator would count it as caught without having changed a comma. Her
 as ERROR and brings down the whole run: a harness that passes without having bitten vouches for
 nothing. It was checked in both directions, with an anchor invented by hand.
 
-### What it returns on a real tree, and with what limits
+### What can be checked from outside
 
-Measured on 30/07/2026 over a private repository of 130 benches with cases of their own, 5
-aggregators and 3 excluded, against 30 hand-written labels:
+**This page asserts no figure about the private tree.** The reason is not that the figure came out
+wrong. It is that you cannot check it: that tree does not travel in the repository and there is no
+command to type to measure it again. The last pass sits in the table at the top, with its command,
+its date, its hour, its commit and the three benches named one by one, in the row that puts it where
+it belongs: inside a series that falls with every refinement.
 
-- **3 benches with no negative control, out of 130.**
-- **The detector agrees with all 30 labels**, with no false positive and no false negative.
+What you can run is the example at the top, over this very repository and with nothing to prepare.
+It gives **9 labels over 9 benches, agreement 9 of 9 and exit `0`**, and the «SIN control negativo 2
+de 8» printed there describes the toy tree in `ejemplo/bancos/`, planted bench by bench. Two with no
+negative arm, which are the two the report flags; five with one, one per signal; and one aggregator,
+for the label's third value. The ninth bench of that universe is the tool's own.
 
-That tree does not travel here, so the figure is not reproducible by whoever reads this: what is
-reproducible is the example at the top, which runs over this very repository. And two limits worth
-stating before anybody quotes the number:
+Those fixtures are the material the detector MEASURES, so several of them call symbols that do not
+exist on purpose and would fail if anybody ran them as tests. They are named `test_*.py` because the
+detector's criterion is the filename, and renaming them would drop them out of their own
+measurement. The exclusion lives in `conftest.py`: today `python -m pytest -q` over this repository
+collects 30 tests, all 30 from the detector's own bench, and comes out green without touching a
+single fixture.
+
+Of the pass over the private tree this repository stands behind one thing only. It is a property of
+the instrument rather than of the tree: **the detector agreed with all 30
+hand-written labels, 30 of 30**, with no false positive and no false negative. That is measured
+against an object which does not move, while the count is measured against a tree that took in three
+benches that same day. That is the difference between the two figures. It is also the whole thesis
+of the tool.
+
+And two limits worth stating before anybody quotes the figure in the table:
 
 1. **There are few negative labels.** Three «it does not have one» cases do not support a false
    negative rate. What is measured is that the new part of the criterion rescues no bench without
@@ -477,8 +610,9 @@ python ../detector-control-negativo/skills/detector-control-negativo/verificar_c
 
 The first run exits with `2`, and rightly so: there are no labels yet, and without them the count
 is an unscored approximation. The path is `--etiquetar`, opening by hand whatever it lists, and
-writing the label with its evidence. That sitting is the work, and there is no shortcut: measuring
-a bench means reading it.
+writing the label with its evidence.
+
+That sitting is the work. There is no shortcut: measuring a bench means reading it.
 
 | Option | What for |
 |---|---|
@@ -524,6 +658,13 @@ about.
 Python 3.9 or newer, standard library, no network and nothing to install. On macOS and most Linux
 the interpreter is `python3`, not `python`: the commands on this page say `python` because they
 were written on Windows.
+
+That sentence describes the **instrument**. It is worth tightening, because the repository does not
+meet the same claim. `verificar_control_negativo.py` and `mutar.py` open no socket: what they
+need they ask of local `git`. The one that does go out is `guardian_gemelo.py`, which queries
+`api.github.com` to compare this repository against its twin, and which therefore ships a local
+route through `GEMELO_LOCAL` so it can be exercised without the network. It is part of neither the
+skill nor the measurement.
 
 That 3.9 is **declared and not yet certified**. Locally it has only been run with Python 3.13 on
 Windows. A read-through found no syntax or library above 3.9, but that finds incompatibilities and

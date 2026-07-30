@@ -59,7 +59,10 @@ VIGILADOS = [
     ".github/workflows/ci.yml",
     ".gitignore",
     "LICENSE",
+    "conftest.py",
+    "pytest.ini",
     "ejemplo/etiquetas_ejemplo.yaml",
+    "ejemplo/bancos/README.md",
     "ejemplo/bancos/run_tests_agregador.py",
     "ejemplo/bancos/test_assert_negativo.py",
     "ejemplo/bancos/test_espera_cero.py",
@@ -83,6 +86,14 @@ SOLO_EN_UNO = {
     "SPEC.md": "la especificacion, solo en el repositorio de la herramienta",
 }
 DECLARADOS = set(VIGILADOS) | set(PUEDEN_DIFERIR) | set(SOLO_EN_UNO)
+
+
+# Las carpetas de cache de las herramientas, que no publica nadie. Van fuera del paseo porque
+# este guardian mira el DISCO y no `git ls-files`: quiere cazar tambien el fichero que alguien
+# acaba de crear y todavia no ha commiteado. El precio es que un resto de herramienta le sale
+# como fichero sin declarar, y con `.pytest_cache` eso pasaba en cuanto alguien lanzaba pytest
+# en el repositorio, que es el primer comando que va a lanzar cualquiera que lo clone.
+CACHES = (".git", "__pycache__", ".pytest_cache")
 
 
 def _andar(raiz):
@@ -119,7 +130,7 @@ def _listar_remoto():
     if LOCAL:
         fuera = set()
         for raiz, dirs, ficheros in _andar(LOCAL):
-            dirs[:] = [d for d in dirs if d not in (".git", "__pycache__")]
+            dirs[:] = [d for d in dirs if d not in CACHES]
             for f in ficheros:
                 fuera.add(os.path.relpath(os.path.join(raiz, f), LOCAL).replace(os.sep, "/"))
         return fuera
@@ -172,7 +183,7 @@ def main():
 
     locales = set()
     for raiz, dirs, ficheros in _andar(AQUI):
-        dirs[:] = [d for d in dirs if d not in (".git", "__pycache__")]
+        dirs[:] = [d for d in dirs if d not in CACHES]
         for f in ficheros:
             locales.add(os.path.relpath(os.path.join(raiz, f), AQUI).replace(os.sep, "/"))
 

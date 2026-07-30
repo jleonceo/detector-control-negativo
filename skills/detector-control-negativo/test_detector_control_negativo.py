@@ -16,6 +16,8 @@ escrito a mano, para que el veredicto correcto sea evidente al leerlo. Los de `S
 lo prueban sobre el arbol de verdad, que es donde aparecen los defectos que nadie imagina:
 este repositorio trae bancos plantados a proposito en `ejemplo/bancos/` y su etiqueta al lado.
 """
+import fnmatch
+import importlib.util
 import os
 import shutil
 import sys
@@ -280,6 +282,42 @@ class SobreEsteRepo(unittest.TestCase):
         self.assertEqual(fn, [], "falsos negativos: %s" % fn)
         self.assertEqual(mal, [], "agregadores mal clasificados: %s" % mal)
 
+    def test_las_fixtures_plantadas_estan_declaradas_fuera_del_descubrimiento(self):
+        """El censo del `conftest.py` cubre las fixtures del ejemplo, y no cubre este banco.
+
+        POR QUE HACE FALTA. Las fixtures de `ejemplo/bancos/` tienen que llamarse `test_*.py`,
+        porque el universo del detector se define por el nombre, y a la vez invocan simbolos que
+        no existen a proposito. Pytest las recogia y este repositorio salia con 9 fallos en un
+        clon recien hecho. El `conftest.py` de la raiz las declara fuera del descubrimiento.
+
+        LO QUE ESTE CASO NO ES. No es pytest. Quien decide lo que se recoge es pytest, y eso lo
+        comprueba el flujo de CI, que lo instala y mira la lista. Aqui se comprueba el CENSO, que
+        es lo unico que se puede comprobar sin dependencias, y caza las dos maneras de romperlo:
+        una fixture plantada fuera de los patrones declarados, y un patron tan ancho que se lleve
+        por delante el banco del propio detector.
+        """
+        conf = os.path.join(RAIZ, "conftest.py")
+        self.assertTrue(os.path.isfile(conf), "falta el conftest.py de la raiz")
+        spec = importlib.util.spec_from_file_location("conftest_bajo_prueba", conf)
+        modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modulo)
+        patrones = [os.path.join(RAIZ, p.replace("/", os.sep))
+                    for p in modulo.collect_ignore_glob]
+
+        fixtures = sorted(r for r in set(self.res) | set(self.agr) if r.startswith("ejemplo/"))
+        self.assertTrue(fixtures, "el ejemplo no trae ni un banco: no habria nada que declarar")
+        sueltas = [r for r in fixtures
+                   if not any(fnmatch.fnmatch(os.path.join(RAIZ, r.replace("/", os.sep)), p)
+                              for p in patrones)]
+        self.assertEqual(sueltas, [], "fixtures que ningun patron saca del descubrimiento: %s"
+                                      % sueltas)
+
+        propio = os.path.join(RAIZ, os.path.join("skills", "detector-control-negativo",
+                                                 "test_detector_control_negativo.py"))
+        self.assertEqual([p for p in patrones if fnmatch.fnmatch(propio, p)], [],
+                         "un patron del conftest se lleva por delante el banco del detector, y "
+                         "entonces pytest saldria verde sin haber ejecutado nada")
+
     def test_los_bancos_plantados_sin_control_negativo_se_cazan(self):
         # El ejemplo trae dos bancos sin control negativo puestos a proposito. Si el detector
         # deja de verlos, este repositorio deja de demostrar lo que dice demostrar.
@@ -315,6 +353,80 @@ class Universo(unittest.TestCase):
         bancos, excluidos = det.bancos_del_repo(RAIZ, ("/ejemplo/",))
         self.assertTrue(excluidos, "no ha excluido ningun banco de ejemplo/")
         self.assertFalse([b for b in bancos if "/ejemplo/" in "/" + b])
+
+
+class ElArnesCumpleSuPropioContrato(unittest.TestCase):
+    """`mutar.py` promete que el fichero medido queda restaurado. Aqui se le exige.
+
+    POR QUE EXISTE ESTA CLASE. Hasta el 30/07/2026 `mutar.py` imprimia «el fichero medido queda
+    restaurado» y en Windows no era cierto: leia con saltos de linea universales y escribia con
+    `newline=""`, asi que en un clon con `core.autocrlf=true` devolvia 387 lineas en LF sobre un
+    fichero que estaba en CRLF. 18.362 bytes antes de ejecutarlo, 17.975 despues, y `git status`
+    marcando el detector como modificado justo despues del segundo comando que manda el README.
+
+    No es un detalle de bytes. La herramienta que este repositorio publica para demostrar que un
+    banco verde puede estar mintiendo llevaba meses anunciando una restauracion que no hacia, y
+    nadie se enteraba porque en el arbol de trabajo donde nacio los ficheros ya estaban en LF. El
+    defecto solo aparecia en un clon limpio, que es exactamente donde llega el visitante.
+
+    LO QUE AQUI NO SE PUEDE HACER, escrito para que nadie lo intente: llamar a `mutar.py` de punta
+    a punta. `mutar.py` lanza ESTE banco como proceso hijo por cada sabotaje, asi que un caso que
+    lo invocara se llamaria a si mismo sin fondo. Lo que se prueba es su ciclo de lectura y
+    escritura, que es donde vivia el fallo; el ciclo completo lo ejecuta el flujo de CI.
+    """
+
+    def setUp(self):
+        import mutar                                     # noqa: E402  (AQUI ya esta en sys.path)
+        self.mut = mutar
+        self.tmp = tempfile.mkdtemp(prefix="detcn_arnes_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _objetivo(self, salto):
+        """Un fichero de mentira con el salto que se pida, y los bytes exactos que se escribieron."""
+        crudo = ("primera linea%ssegunda linea%s" % (salto, salto)).encode("utf-8")
+        ruta = os.path.join(self.tmp, "objetivo_de_mentira.py")
+        with open(ruta, "wb") as fh:
+            fh.write(crudo)
+        return ruta, crudo
+
+    def test_sabotear_y_devolver_no_toca_los_finales_de_linea(self):
+        """La secuencia de `main()` en pequeño, y en los dos mundos: leer en binario, mutar sobre
+        el texto normalizado, escribir el sabotaje y devolver el original.
+
+        Los dos saltos hacen falta. Con LF solo, el fallo era invisible: en un arbol que ya esta
+        en LF, leer con saltos universales y escribir LF devuelve el fichero identico, y ahi es
+        donde se escribio el codigo y donde se dio por bueno.
+        """
+        for salto, nombre in (("\r\n", "CRLF"), ("\n", "LF")):
+            ruta, crudo = self._objetivo(salto)
+            original_bytes = self.mut._leer_bytes(ruta)
+            texto, leido = self.mut._texto_y_salto(original_bytes)
+            self.assertEqual(leido, salto, "no reconocio el salto de linea en %s" % nombre)
+
+            mutado = texto.replace("segunda linea", "segunda linea SABOTEADA")
+            self.assertNotEqual(mutado, texto, "el sabotaje de mentira no se aplico")
+            self.mut._escribir_bytes(ruta, self.mut._a_bytes(mutado, leido))
+            saboteado = self.mut._leer_bytes(ruta)
+            self.assertEqual(saboteado.count(b"\r\n"), crudo.count(b"\r\n"),
+                             "en %s el fichero SABOTEADO cambio los finales de linea, y entonces"
+                             " un `git diff` a mitad de ejecucion no deja ver el sabotaje"
+                             % nombre)
+
+            self.mut._escribir_bytes(ruta, original_bytes)
+            self.assertEqual(self.mut._leer_bytes(ruta), crudo,
+                             "en %s la restauracion no devolvio el fichero byte a byte" % nombre)
+
+    # AQUI SE QUEDO FUERA UN CASO, y el motivo vale mas que el caso. Iba a comprobar que las seis
+    # anclas de `MUTACIONES` siguen apareciendo en el fichero medido, que es lo que justifica
+    # normalizar los saltos antes de buscarlas. Leer el fichero de verdad lo estropea: `mutar.py`
+    # lanza este banco con el fichero SABOTEADO, o sea con el ancla ya sustituida, asi que el caso
+    # se habria puesto rojo en las seis mutaciones y las habria dado por «cazadas» sin que ninguna
+    # senal del criterio estuviera vigilando nada. Un caso que caza todos los sabotajes por el
+    # motivo equivocado convierte el arnes en el adorno que este repositorio denuncia. Lo que
+    # cubre esa grieta ya esta puesto: si un ancla envejece, `mutar.py` falla cerrado y lo canta
+    # como ERROR, y el flujo de CI se pone rojo.
 
 
 if __name__ == "__main__":
