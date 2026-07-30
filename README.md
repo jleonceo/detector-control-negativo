@@ -7,7 +7,7 @@ misma contra un conjunto etiquetado a mano antes de opinar de nadie.**
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![sin dependencias](https://img.shields.io/badge/dependencias-ninguna-brightgreen)
-![30 casos](https://img.shields.io/badge/banco-30%20casos-brightgreen)
+![32 casos](https://img.shields.io/badge/banco-32%20casos-brightgreen)
 ![mutación 6/6](https://img.shields.io/badge/mutaci%C3%B3n-6%2F6-brightgreen)
 ![licencia MIT](https://img.shields.io/badge/licencia-MIT-lightgrey)
 
@@ -317,11 +317,11 @@ palabra.
 ### Verificación
 
 ```bash
-python skills/detector-control-negativo/test_detector_control_negativo.py   # 30 casos
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 32 casos
 python skills/detector-control-negativo/mutar.py                           # 6 sabotajes
 ```
 
-**30 casos, y siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
+**32 casos, y siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
 cazar bancos sin control negativo, no tenerlos sería la ironía más cara del repositorio. El que
 más vale es `test_cn1_prosa_con_no_y_sin_no_dispara`: comprueba que la señal de texto **no**
 dispara sobre prosa llena de «no» y «sin», que es exactamente cómo la primera versión acabó
@@ -574,7 +574,7 @@ Those fixtures are the material the detector MEASURES, so several of them call s
 exist on purpose and would fail if anybody ran them as tests. They are named `test_*.py` because the
 detector's criterion is the filename, and renaming them would drop them out of their own
 measurement. The exclusion lives in `conftest.py`: today `python -m pytest -q` over this repository
-collects 30 tests, all 30 from the detector's own bench, and comes out green without touching a
+collects 32 tests, all 32 from the detector's own bench, and comes out green without touching a
 single fixture.
 
 Of the pass over the private tree this repository stands behind one thing only. It is a property of
@@ -630,11 +630,11 @@ word.
 ### Verification
 
 ```bash
-python skills/detector-control-negativo/test_detector_control_negativo.py   # 30 cases
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 32 cases
 python skills/detector-control-negativo/mutar.py                           # 6 sabotages
 ```
 
-**30 cases, seven of them negative controls marked `CN`.** In a bench whose whole purpose is
+**32 cases, seven of them negative controls marked `CN`.** In a bench whose whole purpose is
 catching benches without negative controls, having none would be the most expensive irony in the
 repository. The one that matters most is `test_cn1_prosa_con_no_y_sin_no_dispara`: it checks that
 the text signal does **not** fire on prose full of «no» and «sin», which is exactly how the first
