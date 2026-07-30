@@ -14,8 +14,7 @@ misma contra un conjunto etiquetado a mano antes de opinar de nadie.**
 Esto es lo que devuelve, sobre el árbol de este mismo repositorio y sin preparar nada:
 
 ```
-python skills/detector-control-negativo/verificar_control_negativo.py \
-  --etiquetas ejemplo/etiquetas_ejemplo.yaml --listar
+python skills/detector-control-negativo/verificar_control_negativo.py --etiquetas ejemplo/etiquetas_ejemplo.yaml --listar
 ```
 
 ```
@@ -67,8 +66,8 @@ dice nada.
 Son el material que el detector MIDE, así que varias de esas fixtures invocan símbolos que no
 existen a propósito y se caerían si alguien las ejecutara como pruebas. Se llaman `test_*.py` porque
 el criterio del detector es el nombre del fichero, y renombrarlas las sacaría de su propia medición.
-La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge 30
-pruebas, las 30 del banco del detector, y sale verde sin tocar una sola fixture.
+La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge 32
+pruebas, las 32 del banco del detector, y sale verde sin tocar una sola fixture.
 
 [Español](#español) · [English](#english)
 
@@ -227,7 +226,8 @@ formas** de cualquier otra señal que pudiera taparlas.
 
 El banco pasó de 24 a 26 casos.
 
-Los cuatro que faltan hasta los 30 de hoy los añadió el empaquetado, y cada uno cubre una pieza
+Los cuatro que faltan hasta 30 los añadió el empaquetado, y los dos últimos, hasta los 32 de hoy,
+entraron al vigilar el censo de fixtures y la restauración del mutador. Cada uno cubre una pieza
 que en el árbol privado no existía o estaba clavada dentro del script: que los bancos plantados a
 propósito se cacen, que ningún banco de este repositorio se quede sin etiqueta, que la raíz de git
 no se invente cuando no hay ninguna, y que la exclusión declarada saque las rutas y las cuente
