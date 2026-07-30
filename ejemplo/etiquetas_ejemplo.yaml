@@ -1,0 +1,76 @@
+# Verdad de referencia de ESTE repositorio, etiquetada a mano.
+#
+# Es la pieza que separa este detector de un contador cualquiera. Sin ella, una version nueva
+# del criterio se juzga por dar un numero mas pequeño, y así se fabricó la secuencia
+# 112 → 77 → 48 → 31 del árbol donde nació: cada afinado daba menos y ninguno estaba anclado.
+# Con ella, un criterio que baja el recuento total subiendo los falsos negativos es peor,
+# aunque el titular sea más bonito.
+#
+# La etiqueta se escribe ANTES de afinar el criterio, a propósito: si primero se afina y luego
+# se etiqueta, la etiqueta se acomoda al instrumento y la medición deja de valer.
+#
+# Tres valores, no dos. `agregador` es un fichero que se llama como un banco y no tiene un solo
+# caso propio: descubre otros y los lanza. Contarlo entre los que solo comprueban que lo bueno
+# pasa es contar el objeto equivocado, y en la primera pasada del árbol privado cinco de los
+# veinticuatro señalados eran justo eso.
+#
+# Cubre el universo ENTERO de este repositorio, y el banco del detector lo exige en las dos
+# direcciones: ninguna etiqueta puede apuntar a un fichero que ya no existe, y ningún banco
+# puede quedarse sin etiqueta. Si alguien añade un banco y no lo etiqueta, la puntuación
+# seguiría saliendo perfecta sobre los que ya estaban, que es un instrumento midiéndose contra
+# una muestra que encoge.
+
+etiquetas:
+
+  # --- Los dos plantados a propósito SIN brazo negativo -----------------------------------
+
+  - banco: ejemplo/bancos/test_solo_positivo.py
+    tiene_control_negativo: false
+    evidencia: "dos casos, los dos de igualdad contra el valor bueno; nunca pregunta por una entrada mala"
+    etiquetado_el: 2026-07-30
+
+  - banco: ejemplo/bancos/test_prosa_con_no_y_sin.py
+    tiene_control_negativo: false
+    evidencia: "el docstring está lleno de «no» y «sin», y el único caso comprueba que el fichero existe"
+    etiquetado_el: 2026-07-30
+
+  # --- Uno por señal, para que cada una tenga su caso ------------------------------------
+
+  - banco: ejemplo/bancos/test_assert_negativo.py
+    tiene_control_negativo: true
+    evidencia: "self.assertFalse(motor.valida(\"basura\")) en test_rechaza_lo_malo"
+    etiquetado_el: 2026-07-30
+
+  - banco: ejemplo/bancos/test_espera_cero.py
+    tiene_control_negativo: true
+    evidencia: "check(len(hallazgos(...)) == 0, ...) y check(permitir is False, ...) dentro de un helper propio"
+    etiquetado_el: 2026-07-30
+
+  - banco: ejemplo/bancos/test_marca_cn.py
+    tiene_control_negativo: true
+    evidencia: "el caso lleva la marca explícita del proyecto, tanto en el comentario como en el nombre"
+    etiquetado_el: 2026-07-30
+
+  - banco: ejemplo/bancos/test_nombre_negativo_aislado.py
+    tiene_control_negativo: true
+    evidencia: "def test_no_permite_duplicados, con una igualdad corriente por asercion"
+    etiquetado_el: 2026-07-30
+
+  - banco: ejemplo/bancos/test_veredicto_malo.py
+    tiene_control_negativo: true
+    evidencia: "assertEqual(estado_de(fuente_caducada()), \"NO_CONFIA\"): afirma el veredicto malo"
+    etiquetado_el: 2026-07-30
+
+  # --- El tercer valor -------------------------------------------------------------------
+
+  - banco: ejemplo/bancos/run_tests_agregador.py
+    tiene_control_negativo: agregador
+    evidencia: "glob + subprocess.run sobre otros bancos, y ni una asercion propia"
+    etiquetado_el: 2026-07-30
+
+  # --- Y el banco del propio detector ----------------------------------------------------
+
+  - banco: skills/detector-control-negativo/test_detector_control_negativo.py
+    tiene_control_negativo: true
+    evidencia: "siete casos marcados CN, entre ellos test_cn1_prosa_con_no_y_sin_no_dispara"
+    etiquetado_el: 2026-07-30

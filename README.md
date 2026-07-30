@@ -1,0 +1,549 @@
+# detector-control-negativo
+
+**Tu suite de pruebas está verde. La pregunta que nadie hace es si esa suite sabría ponerse roja.
+Un banco que solo comprueba que lo bueno pasa aprueba igual al código bueno y al roto. Esta
+herramienta cuenta cuántos hay así en un repositorio, dice cuáles y por qué, y se puntúa a sí
+misma contra un conjunto etiquetado a mano antes de opinar de nadie.**
+
+![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
+![sin dependencias](https://img.shields.io/badge/dependencias-ninguna-brightgreen)
+![30 casos](https://img.shields.io/badge/banco-30%20casos-brightgreen)
+![mutación 6/6](https://img.shields.io/badge/mutaci%C3%B3n-6%2F6-brightgreen)
+![licencia MIT](https://img.shields.io/badge/licencia-MIT-lightgrey)
+
+Esto es lo que devuelve, sobre el árbol de este mismo repositorio y sin preparar nada:
+
+```
+python skills/detector-control-negativo/verificar_control_negativo.py \
+  --etiquetas ejemplo/etiquetas_ejemplo.yaml --listar
+```
+
+```
+==============================================================================
+BANCOS SIN CONTROL NEGATIVO
+==============================================================================
+  bancos con casos propios .. 8
+  agregadores ............... 1  (lanzan otros bancos; no tienen casos que juzgar)
+  excluidos a proposito ..... 0  (no se ha pasado --excluir)
+  criterio del universo ..... versionado en git + nombre test_*/run_tests*/*_test
+
+  con control negativo ...... 6
+  SIN control negativo ...... 2
+  senal que dispara ......... MARCA 2 | ASSERT_NEG 2 | ESPERA_CERO 2 | NOMBRE_NEG 3 | ETIQUETA_NEG 2
+
+  -- SIN control negativo (revisar a mano antes de creerselo) --
+     ejemplo/bancos/test_prosa_con_no_y_sin.py
+     ejemplo/bancos/test_solo_positivo.py
+
+  -- con control negativo, y por que --
+     ejemplo/bancos/test_assert_negativo.py                     ASSERT_NEG,NOMBRE_NEG
+     ejemplo/bancos/test_espera_cero.py                         ESPERA_CERO
+     ejemplo/bancos/test_marca_cn.py                            MARCA
+     ejemplo/bancos/test_nombre_negativo_aislado.py             NOMBRE_NEG
+     ejemplo/bancos/test_veredicto_malo.py                      ETIQUETA_NEG
+     skills/detector-control-negativo/test_detector_control_negativo.py MARCA,ASSERT_NEG,ESPERA_CERO,NOMBRE_NEG,ETIQUETA_NEG
+
+------------------------------------------------------------------------------
+  EL DETECTOR CONTRA LAS ETIQUETAS  (9 etiquetadas de 9 bancos)
+    concuerda ............... 9 de 9
+
+  >> El detector concuerda con todas las etiquetas.
+     Bancos sin control negativo hoy: 2 de 8.
+```
+
+Los dos bancos señalados están plantados a propósito en `ejemplo/bancos/`, con su etiqueta al
+lado. El resto del universo es el propio banco de la herramienta y seis fixtures, uno por señal.
+
+[Español](#español) · [English](#english)
+
+---
+
+## Español
+
+### El problema
+
+Una suite verde demuestra que el código pasa sus casos. No demuestra que la suite sepa separar el
+código bueno del roto, y eso es otra pregunta.
+
+El caso más común es un banco que comprueba solo el camino bueno: se le pasa una entrada
+correcta, se comprueba que sale el resultado correcto, y ahí acaba. Ese banco da verde. Y sigue
+dando verde cuando alguien rompe la validación de entrada, porque nadie le pregunta nunca qué
+hace con una entrada mala. En la jerga es un banco sin **control negativo**: le falta el caso que
+afirma lo que la herramienta debe rechazar, bloquear, dejar vacío o marcar como inválido.
+
+Contar cuántos bancos están en ese estado parece un ejercicio de una tarde. Lo intentamos y salió
+así:
+
+| versión del criterio | qué añadió | bancos sin control negativo |
+|---|---|---:|
+| v1 | la marca explícita del proyecto | 112 de 131 |
+| v2 | `assertNot*`, `assertFalse`, `assertRaises` | 77 |
+| v3 | esperar cero, lista vacía, nombres `_no_` y `_sin_` | 48 |
+| v4 | el helper propio que envuelve la aserción | 31 |
+| revisión a mano | 3 casos abiertos, 2 tenían control negativo | ~10 |
+
+**Ninguna versión estaba mal programada.** Cada afinado medía un objeto distinto, y cada uno daba
+menos que el anterior. Una cifra que solo baja conforme se mira mejor no ha convergido en ninguna
+parada anterior: en las tres primeras se habría actuado sobre ella, y la primera habría declarado
+un problema diez veces mayor que el real. Encima, el script de aquel día no quedó en disco, así
+que volver a preguntar la cifra obligaba a repetir la investigación entera.
+
+De ahí salen los dos requisitos que ordenan esta herramienta: **el contador vive en disco**, y
+**el criterio se puntúa contra una verdad de referencia** en vez de juzgarse por el tamaño de su
+resultado.
+
+### La pieza que la diferencia de un contador cualquiera
+
+Un fichero de etiquetas escrito a mano, abriendo cada banco, con tres campos por entrada:
+
+```yaml
+  - banco: ejemplo/bancos/test_veredicto_malo.py
+    tiene_control_negativo: true
+    evidencia: "assertEqual(estado_de(fuente_caducada()), \"NO_CONFIA\"): afirma el veredicto malo"
+    etiquetado_el: 2026-07-30
+```
+
+Con eso, una versión nueva del criterio **ya no se juzga por dar un número más pequeño**: se
+puntúa. Se cuentan los falsos positivos (los que señala y sí tenían control negativo) y los
+falsos negativos (los que da por buenos y no lo tienen). Un criterio que baja el titular subiendo
+los falsos negativos es peor, aunque el titular quede mejor.
+
+Y la etiqueta se escribe **antes** de afinar el criterio, a propósito. Al revés, la etiqueta se
+acomoda al instrumento y la medición deja de valer.
+
+`tiene_control_negativo` tiene un tercer valor, `agregador`, y no es un adorno: hay ficheros que
+se llaman como un banco y no tienen un solo caso propio, porque descubren otros y los lanzan.
+Contarlos entre los carentes es contar el objeto equivocado, y en la primera pasada cinco de los
+veinticuatro señalados eran justo eso.
+
+### Por eso el código de salida no habla del repositorio
+
+| salida | qué significa |
+|---|---|
+| `0` | el detector concuerda con todas las etiquetas |
+| `1` | discrepa de alguna: hay un falso positivo o un falso negativo |
+| `2` | no hay etiquetas con las que medirse, así que no se puntúa |
+| `3` | no hay universo: ninguna raíz de git, o cero bancos encontrados |
+
+**El recuento de bancos se reporta y no tumba nada.** Es la consecuencia directa de la tabla de
+arriba: actuar sobre una cifra que no ha convergido es el error que esta herramienta existe para
+no repetir. Quien quiera un umbral que bloquee, lo pone él y sabiendo lo que hace.
+
+Y el `3` es igual de deliberado. Fuera de un repositorio de git no hay universo, y decir «0
+bancos sin control negativo» ahí sería el falso verde de manual: el mensaje más tranquilizador
+posible producido por no haber mirado nada.
+
+### Las señales, y por qué cada una es estrecha
+
+| señal | qué reconoce |
+|---|---|
+| `MARCA` | la marca explícita: `_CN_`, «control negativo», «CN1» |
+| `ASSERT_NEG` | `assertNot*`, `assertFalse`, `assertRaises`, `pytest.raises`, `assert not` |
+| `ESPERA_CERO` | esperar `0`, `[]`, `{}`, `None`, `False`, `is False`, `not in` |
+| `NOMBRE_NEG` | nombres de caso con `_no_`, `_sin_`, `rechaza`, `bloquea`, `falla`, `invalido` |
+| `ETIQUETA_NEG` | la etiqueta del caso declara el brazo negativo, o afirma el veredicto malo |
+
+Basta una para que el banco cuente como cubierto. Dos precauciones que costaron tiempo y viven
+dentro del código:
+
+**`ESPERA_CERO` mira la forma de la condición y no el nombre de la función que la envuelve.** Un
+proyecto con su propio helper (`check(...)`) no tiene un solo `assertFalse` en todo el árbol, y
+sin esta señal sus bancos salían como carentes. Fue uno de los dos falsos positivos que destapó
+la revisión a mano.
+
+**Las señales de texto se buscan donde toca, y no en cualquier cadena.** La primera versión
+miraba «no» y «sin» dentro de todo el fichero y **disparaba en 129 bancos de 129**. Una señal que
+marca al 100 % de la población no separa nada: solo baja el recuento, que es como se fabrica una
+cifra que parece mejor y mide peor. Se cazó porque el informe imprime el reparto por señal; con
+el total a secas habría pasado por buena.
+
+### La historia honesta: cuatro mutaciones antes de publicar
+
+Antes de preparar este repositorio se le pasaron **cuatro mutaciones al propio detector**, cada
+una verificada mordida a mordida **antes** de mirar qué decía el banco. Es lo contrario de
+presumir de suite verde: se rompe el código a mano y se mira si alguien se queja.
+
+- **Dos mordieron limpio.** Al romper el reconocimiento de agregadores (el fallo que en la primera
+  pasada confundió 5 de 24) cayó el caso que compara el detector con las etiquetas, y cayó
+  señalando con nombre y apellido el banco mal clasificado.
+- **Dos no rompieron nada, y ahí estaba el agujero.** Al borrar el literal `_CN_` del
+  reconocimiento de la marca, y al borrar los nombres `_no_` y `_sin_` de la señal de nombre,
+  **no cayó ni un test**. Cada una de esas dos formas dependía en exclusiva de un único banco del
+  árbol medido, y ninguno de esos dos bancos estaba en el fichero de etiquetas. Un banco de 24
+  casos, verde, y dos líneas del criterio que cualquiera podía borrar mañana sin que nadie se
+  enterase. La señal de nombre no es un detalle: es la que más peso tiene en el recuento.
+
+Se cerró antes de tocar el repositorio, con **dos casos nuevos que aíslan cada una de las dos
+formas** de cualquier otra señal que pudiera taparlas. El banco pasó de 24 a 26 casos.
+
+Eso obliga a decir algo incómodo de la propia herramienta: **este detector cuenta qué bancos
+tienen un brazo negativo, y tener un brazo negativo no es discriminar.** Un banco puede llevar
+`assertFalse` y seguir pasando con el código roto. Lo que separa un banco de un adorno es mutar
+el código, y por eso la mutación viaja dentro del paquete:
+
+```
+python skills/detector-control-negativo/mutar.py
+```
+
+**Seis sabotajes, y hoy se cazan los seis.** No hay que creérselo: el comando lo hace delante de
+quien lo lance, y deja el fichero medido restaurado al terminar y también si el proceso muere a
+mitad, porque la copia intacta vive en disco y no en la memoria del programa.
+
+Y el mutador **falla cerrado**, que es la parte que más fácil se hace mal. Si el ancla de un
+sabotaje ya no aparece en el fichero (porque alguien renombró una constante), esa mutación no se
+aplica, y un mutador ingenuo la contaría como cazada sin haber cambiado una coma. Aquí eso sale
+con ERROR y tumba la ejecución entera: un arnés que aprueba sin haber mordido no avala nada. Se
+comprobó en las dos direcciones, con un ancla inventada a mano.
+
+### Lo que da sobre un árbol de verdad, y con qué límites
+
+Medido el 30/07/2026 sobre un repositorio privado de 130 bancos con casos propios, 5 agregadores
+y 3 excluidos, con 30 etiquetas escritas a mano:
+
+- **3 bancos sin control negativo de 130.**
+- **El detector concuerda con las 30 etiquetas**, sin un falso positivo ni un falso negativo.
+
+Ese árbol no viaja aquí, así que la cifra no es reproducible por quien lea esto: lo reproducible
+es el ejemplo del principio, que corre sobre este mismo repositorio. Y dos límites que hay que
+decir antes de que alguien cite el número:
+
+1. **Las etiquetas negativas son pocas.** Tres casos de «no lo tiene» no permiten afirmar una tasa
+   de falsos negativos. Lo que sí está medido es que la parte nueva del criterio no rescata ni un
+   banco sin que una etiqueta lo respalde.
+2. **El universo es lo que git publica, y el criterio es el nombre.** Un banco del árbol de
+   trabajo que nadie ha añadido queda fuera. Un banco que no se llame `test_*.py`,
+   `run_tests*.py` o `*_test.py` tampoco entra. Son dos suelos declarados.
+
+### Instalación
+
+Para leer esta página no hace falta instalar nada: el instrumento viaja dentro y el comando del
+principio lo ejecuta tal cual. Para usarlo a diario dentro de Claude Code, el paquete instalable
+y sus instrucciones de desinstalación viven en
+**[jleonceo/skill-detector-control-negativo](https://github.com/jleonceo/skill-detector-control-negativo)**.
+
+En tu propio repositorio, sin instalar nada:
+
+```bash
+git clone https://github.com/jleonceo/detector-control-negativo
+cd tu-repositorio
+python ../detector-control-negativo/skills/detector-control-negativo/verificar_control_negativo.py --etiquetar
+```
+
+La primera ejecución sale con `2` y está bien que lo haga: todavía no hay etiquetas, y sin ellas
+el recuento es una aproximación sin puntuar. El camino es `--etiquetar`, abrir a mano los ficheros
+que salgan, y escribir la etiqueta con su evidencia. Ese rato es el trabajo, y no hay atajo:
+medir un banco obliga a leerlo.
+
+| Opción | Para qué |
+|---|---|
+| `--raiz RUTA` | el árbol a medir; por defecto, la raíz git del directorio actual |
+| `--etiquetas FICHERO` | la verdad de referencia con la que se puntúa el detector |
+| `--excluir SUBCADENA` | deja fuera las rutas que la contengan; repetible, y se cuentan aparte |
+| `--listar` | cada banco con su veredicto, y cada veredicto con la señal que lo disparó |
+| `--etiquetar` | plantilla YAML de los bancos que aún no tienen etiqueta |
+
+La raíz se le pregunta a git (`git rev-parse --show-toplevel`) en vez de deducirla contando
+carpetas desde el script. Instalado como plugin, el script vive en la caché de Claude Code, lejos
+de cualquier repositorio, y contar carpetas habría medido el árbol equivocado sin decir una
+palabra.
+
+### Verificación
+
+```bash
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 30 casos
+python skills/detector-control-negativo/mutar.py                           # 6 sabotajes
+```
+
+**30 casos, y siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
+cazar bancos sin control negativo, no tenerlos sería la ironía más cara del repositorio. El que
+más vale es `test_cn1_prosa_con_no_y_sin_no_dispara`: comprueba que la señal de texto **no**
+dispara sobre prosa llena de «no» y «sin», que es exactamente cómo la primera versión acabó
+marcando 129 bancos de 129.
+
+El banco mide dos objetos distintos a propósito. Los casos de fixture prueban el criterio con
+texto escrito a mano, para que el veredicto correcto sea evidente al leerlo. Los casos sobre el
+árbol lo prueban contra este repositorio de verdad, y exigen el censo de etiquetas **en las dos
+direcciones**: ninguna etiqueta puede apuntar a un fichero que ya no existe, y ningún banco puede
+quedarse sin etiquetar. Sin la segunda, alguien añade un banco, no lo etiqueta, y la puntuación
+sigue saliendo perfecta sobre los que ya estaban: un instrumento midiéndose contra una muestra
+que encoge.
+
+Un detalle pequeño que dice mucho de la herramienta: el guardián que compara este repositorio con
+su gemelo se llama `guardian_gemelo.py` y no `test_gemelo.py`. El criterio del detector es el
+nombre del fichero, así que llamarlo `test_*` lo metía en su propio universo como si fuera un
+banco con casos que juzgar. Contaminar la medición con el instrumento es la clase de error que
+este repositorio persigue.
+
+### Requisitos
+
+Python 3.9 o superior, biblioteca estándar, sin red y sin nada que instalar. En macOS y en casi
+todo Linux el intérprete se llama `python3`, no `python`: los comandos de esta página van con
+`python` porque se escribieron en Windows.
+
+Ese 3.9 está **declarado y todavía no certificado**. En local solo se ha ejecutado con Python
+3.13 sobre Windows. Un repaso del código no encontró sintaxis ni biblioteca por encima de 3.9,
+pero eso encuentra incompatibilidades y no certifica compatibilidad. Lo que la certifica es la
+matriz de CI (3.9, 3.11 y 3.13 sobre Windows, Linux y macOS) dando verde, y hasta el primer push
+no lo ha dado. Cuando lo dé, esta nota se corrige y no se borra.
+
+### Piezas hermanas
+
+- **[skill-detector-control-negativo](https://github.com/jleonceo/skill-detector-control-negativo)**:
+  el mismo instrumento empaquetado como skill instalable de Claude Code, con su ejemplo dentro.
+- **[adherencia-reglas](https://github.com/jleonceo/adherencia-reglas)**: cuenta qué fracción de
+  las reglas que escribes para tu agente se cumple de verdad. Mismo patrón, otro objeto: allí se
+  mide una norma, aquí se mide un banco.
+- **[guardianes-verificados-ia](https://github.com/jleonceo/guardianes-verificados-ia)**: quién
+  vigila a los guardianes. Un detector que encuentra el problema y no devuelve el código de salida
+  que bloquea no protege nada.
+
+---
+
+## English
+
+> **Read this first: the tool speaks Spanish, and this page does not change that.** Every line it
+> prints, the five signal names (`MARCA`, `ASSERT_NEG`, `ESPERA_CERO`, `NOMBRE_NEG`,
+> `ETIQUETA_NEG`), the five flags and the three YAML keys (`banco`,
+> `tiene_control_negativo`, `evidencia`) are Spanish. The label value `agregador` means
+> «aggregator». This page is the reference for that vocabulary, and not a localised program.
+
+### The problem
+
+A green suite proves the code passes its own cases. It does not prove the suite can tell working
+code from broken code, and that is a different question.
+
+The commonest case is a bench that only checks the happy path: feed it a valid input, assert the
+correct result, done. That bench is green. It stays green after somebody breaks input validation,
+because nobody ever asks it what happens with a bad input. The missing piece is the **negative
+control**: the case that asserts what the tool must reject, block, leave empty or flag as
+invalid.
+
+Counting how many benches are in that state looks like an afternoon's work. Here is how it went:
+
+| criterion version | what it added | benches with no negative control |
+|---|---|---:|
+| v1 | the project's explicit marker | 112 of 131 |
+| v2 | `assertNot*`, `assertFalse`, `assertRaises` | 77 |
+| v3 | expecting zero, an empty list, `_no_` and `_sin_` case names | 48 |
+| v4 | the project's own assertion helper | 31 |
+| by hand | 3 opened, 2 did have a negative control | ~10 |
+
+**No version was miscoded.** Each refinement measured a different object, and each returned less
+than the one before. A figure that only falls as you look harder has not converged at any earlier
+stop: the first three would have been acted upon, and the first one declared a problem ten times
+bigger than the real one. On top of that, the script from that day was never saved, so asking the
+question again meant redoing the whole investigation.
+
+Hence the two requirements that shape this tool: **the counter lives on disk**, and **the
+criterion is scored against a reference truth** instead of being judged by the size of its own
+result.
+
+### The part that makes it more than a counter
+
+A label file written by hand, opening every bench, three fields per entry:
+
+```yaml
+  - banco: ejemplo/bancos/test_veredicto_malo.py     # bench
+    tiene_control_negativo: true                     # has a negative control
+    evidencia: "assertEqual(estado_de(fuente_caducada()), \"NO_CONFIA\")"
+    etiquetado_el: 2026-07-30                        # labelled on
+```
+
+With that, a new version of the criterion **stops being judged by returning a smaller number**
+and gets scored instead: false positives (flagged, but they did have a negative control) and
+false negatives (waved through, and they did not). A criterion that lowers the headline by
+raising false negatives is worse, however much better the headline reads.
+
+And the label is written **before** the criterion is tuned, deliberately. The other way round,
+the label accommodates the instrument and the measurement stops meaning anything.
+
+`tiene_control_negativo` takes a third value, `agregador`, and it is not decoration: some files
+are named like a bench and hold no case of their own, because they discover other benches and
+launch them. Counting those among the uncovered counts the wrong object, and in the first pass
+five of the twenty-four flagged files were exactly that.
+
+### Which is why the exit code does not talk about the repository
+
+| exit | meaning |
+|---|---|
+| `0` | the detector agrees with every label |
+| `1` | it disagrees with one: there is a false positive or a false negative |
+| `2` | there are no labels to be scored against, so no score is invented |
+| `3` | no universe: no git root, or zero benches discovered |
+
+**The bench count is reported and gates nothing.** That follows straight from the table above:
+acting on a figure that has not converged is the very mistake this tool exists to avoid. Anyone
+who wants a blocking threshold sets it themselves, knowing what they are doing.
+
+The `3` is just as deliberate. Outside a git repository there is no universe, and saying «0
+benches without a negative control» there would be the textbook false green: the most reassuring
+message available, produced by having looked at nothing.
+
+### The signals, and why each one is narrow
+
+| signal | what it recognises |
+|---|---|
+| `MARCA` | the explicit marker: `_CN_`, «control negativo», «CN1» |
+| `ASSERT_NEG` | `assertNot*`, `assertFalse`, `assertRaises`, `pytest.raises`, `assert not` |
+| `ESPERA_CERO` | expecting `0`, `[]`, `{}`, `None`, `False`, `is False`, `not in` |
+| `NOMBRE_NEG` | case names with `_no_`, `_sin_`, `rechaza`, `bloquea`, `falla`, `invalido` |
+| `ETIQUETA_NEG` | the case label declares the negative arm, or asserts the bad verdict |
+
+One is enough for the bench to count as covered. Two precautions that cost time and live inside
+the code:
+
+**`ESPERA_CERO` looks at the shape of the condition, not at the name of the function wrapping
+it.** A project with its own helper (`check(...)`) has no `assertFalse` anywhere in the tree, and
+without this signal its benches came out as uncovered. That was one of the two false positives
+the manual review exposed.
+
+**Text signals are looked for where they belong, and not inside any string.** The first version
+looked for «no» and «sin» across the whole file and **fired on 129 benches out of 129**. A signal
+that marks 100 % of the population separates nothing: it only lowers the count, which is how you
+manufacture a figure that looks better and measures worse. It was caught because the report
+prints the per-signal breakdown; with the bare total it would have passed for good.
+
+### The honest story: four mutations before publishing
+
+Before this repository was prepared, **four mutations were run against the detector itself**, each
+one verified to bite **before** looking at what the bench said. This is the opposite of boasting
+about a green suite: you break the code by hand and see whether anybody complains.
+
+- **Two bit cleanly.** Breaking aggregator recognition (the fault that misfiled 5 of 24 in the
+  first pass) brought down the case that compares the detector against the labels, and it fell
+  naming the misfiled bench.
+- **Two broke nothing, and that was the hole.** Deleting the `_CN_` literal from marker
+  recognition, and deleting the `_no_` and `_sin_` names from the name signal, **took down not one
+  test**. Each of those two forms depended exclusively on a single bench in the measured tree, and
+  neither of those benches was in the label file. A 24-case bench, green, and two lines of the
+  criterion anyone could delete tomorrow with nobody noticing. The name signal is not a detail:
+  it is the one carrying most weight in the count.
+
+It was closed before touching this repository, with **two new cases that isolate each of the two
+forms** from any other signal that could mask them. The bench went from 24 to 26 cases.
+
+Which forces an uncomfortable admission about the tool itself: **this detector counts which
+benches have a negative arm, and having a negative arm is not the same as discriminating.** A
+bench can carry `assertFalse` and still pass with broken code. What separates a bench from an
+ornament is mutation, which is why mutation ships inside the package:
+
+```
+python skills/detector-control-negativo/mutar.py
+```
+
+**Six sabotages, and today all six are caught.** No need to take that on trust: the command does
+it in front of you, and it restores the measured file when it finishes and also if the process is
+killed halfway, because the intact copy lives on disk and not in the program's memory.
+
+And the mutator **fails closed**, which is the part most easily got wrong. If a sabotage's anchor
+no longer appears in the file (because someone renamed a constant), that mutation is not applied,
+and a naive mutator would count it as caught without having changed a comma. Here that comes out
+as ERROR and brings down the whole run: a harness that passes without having bitten vouches for
+nothing. It was checked in both directions, with an anchor invented by hand.
+
+### What it returns on a real tree, and with what limits
+
+Measured on 30/07/2026 over a private repository of 130 benches with cases of their own, 5
+aggregators and 3 excluded, against 30 hand-written labels:
+
+- **3 benches with no negative control, out of 130.**
+- **The detector agrees with all 30 labels**, with no false positive and no false negative.
+
+That tree does not travel here, so the figure is not reproducible by whoever reads this: what is
+reproducible is the example at the top, which runs over this very repository. And two limits worth
+stating before anybody quotes the number:
+
+1. **There are few negative labels.** Three «it does not have one» cases do not support a false
+   negative rate. What is measured is that the new part of the criterion rescues no bench without
+   a label backing it.
+2. **The universe is what git publishes, and the criterion is the filename.** A bench in the
+   working tree that nobody added stays out. A bench not named `test_*.py`, `run_tests*.py` or
+   `*_test.py` never enters. Two declared floors.
+
+### Install
+
+Nothing needs installing to read this page: the instrument travels inside and the command at the
+top runs as it is. To use it day to day inside Claude Code, the installable package and its
+uninstall instructions live at
+**[jleonceo/skill-detector-control-negativo](https://github.com/jleonceo/skill-detector-control-negativo)**.
+
+On your own repository, with nothing installed:
+
+```bash
+git clone https://github.com/jleonceo/detector-control-negativo
+cd your-repository
+python ../detector-control-negativo/skills/detector-control-negativo/verificar_control_negativo.py --etiquetar
+```
+
+The first run exits with `2`, and rightly so: there are no labels yet, and without them the count
+is an unscored approximation. The path is `--etiquetar`, opening by hand whatever it lists, and
+writing the label with its evidence. That sitting is the work, and there is no shortcut: measuring
+a bench means reading it.
+
+| Option | What for |
+|---|---|
+| `--raiz PATH` | the tree to measure; by default, the git root of the current directory |
+| `--etiquetas FILE` | the reference truth the detector is scored against |
+| `--excluir SUBSTRING` | drops paths containing it; repeatable, and counted separately |
+| `--listar` | every bench with its verdict, and every verdict with the signal that fired |
+| `--etiquetar` | a YAML template for the benches that have no label yet |
+
+The root is asked of git (`git rev-parse --show-toplevel`) rather than deduced by counting
+folders up from the script. Installed as a plugin, the script lives in Claude Code's cache, far
+from any repository, and counting folders would have measured the wrong tree without saying a
+word.
+
+### Verification
+
+```bash
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 30 cases
+python skills/detector-control-negativo/mutar.py                           # 6 sabotages
+```
+
+**30 cases, seven of them negative controls marked `CN`.** In a bench whose whole purpose is
+catching benches without negative controls, having none would be the most expensive irony in the
+repository. The one that matters most is `test_cn1_prosa_con_no_y_sin_no_dispara`: it checks that
+the text signal does **not** fire on prose full of «no» and «sin», which is exactly how the first
+version ended up marking 129 benches out of 129.
+
+The bench measures two different objects on purpose. The fixture cases test the criterion against
+text written by hand, so the correct verdict is obvious on reading. The tree cases test it against
+this repository for real, and they demand the label census **in both directions**: no label may
+point at a file that no longer exists, and no bench may go unlabelled. Without the second one,
+somebody adds a bench, does not label it, and the score keeps coming out perfect over the ones
+already there: an instrument measuring itself against a shrinking sample.
+
+One small detail that says a lot about the tool: the guard comparing this repository with its twin
+is called `guardian_gemelo.py` and not `test_gemelo.py`. The detector's criterion is the filename,
+so calling it `test_*` dropped it into its own universe as though it were a bench with cases to
+judge. Contaminating the measurement with the instrument is the kind of mistake this repository is
+about.
+
+### Requirements
+
+Python 3.9 or newer, standard library, no network and nothing to install. On macOS and most Linux
+the interpreter is `python3`, not `python`: the commands on this page say `python` because they
+were written on Windows.
+
+That 3.9 is **declared and not yet certified**. Locally it has only been run with Python 3.13 on
+Windows. A read-through found no syntax or library above 3.9, but that finds incompatibilities and
+does not certify compatibility. What certifies it is the CI matrix (3.9, 3.11 and 3.13 across
+Windows, Linux and macOS) going green, and until the first push it has not. When it does, this note
+gets corrected and not deleted.
+
+### Sibling repositories
+
+- **[skill-detector-control-negativo](https://github.com/jleonceo/skill-detector-control-negativo)**:
+  the same instrument packaged as an installable Claude Code skill, example included.
+- **[adherencia-reglas](https://github.com/jleonceo/adherencia-reglas)**: counts what fraction of
+  the rules you wrote for your agent actually gets followed. Same pattern, different object: there
+  a rule is measured, here a bench.
+- **[guardianes-verificados-ia](https://github.com/jleonceo/guardianes-verificados-ia)**: who
+  guards the guards. A detector that finds the problem and fails to return the exit code that
+  blocks protects nothing.
+
+---
+
+## Licencia / License
+
+MIT. Ver [LICENSE](LICENSE).

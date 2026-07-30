@@ -1,0 +1,92 @@
+name: ci
+
+# Por que existe: es la unica vigilancia que sobrevive a que el portatil este apagado. El banco,
+# la mutacion y las cifras del README se comprobaban a mano, o sea cuando alguien se acordaba.
+#
+# La matriz de sistemas no es adorno. El detector pregunta el universo a `git ls-files` y
+# normaliza los separadores de ruta a mano, asi que en POSIX y en Windows recorre cadenas
+# distintas para llegar al mismo sitio. Y `--raiz` se resuelve con `git rev-parse`, que en un
+# runner recien clonado tampoco se comporta igual en los tres sistemas.
+#
+# AVISO HONESTO (30/07/2026): esta matriz no se ha ejecutado todavia. En local solo se ha
+# probado con Python 3.13 en Windows, y el README anuncia 3.9 o superior. Un repaso del codigo
+# no encontro sintaxis ni biblioteca por encima de 3.9, pero eso encuentra incompatibilidades,
+# no certifica compatibilidad. Lo que la certifica es este fichero dando verde, y hasta el
+# primer push no lo ha dado. Cuando lo de, esta nota se corrige y no se borra.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  # EL GUARDIAN DE LOS GEMELOS. Este repositorio y su hermano publican el mismo instrumento, y
+  # cada arreglo hay que escribirlo dos veces. Va en UN solo trabajo y no en la matriz: la
+  # comparacion no depende del sistema ni de la version, y multiplicarla por nueve solo gasta
+  # peticiones a la API.
+  #
+  # Entre el push a uno y el push al otro este trabajo sale ROJO A PROPOSITO. Es la unica
+  # ventana en la que los dos arboles difieren de verdad, y taparla seria devolver el problema.
+  # Mientras el gemelo no exista en GitHub, el guardian sale con 2 (no se pudo comprobar), que
+  # tambien es rojo: un guardian que aprueba sin haber mirado no es un guardian.
+  gemelo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # UN REINTENTO, Y NO ES COMODIDAD. Subir el arreglo a los dos repositorios son dos push
+      # seguidos, y entre uno y otro los arboles difieren de verdad. Eso mandaria un correo de
+      # fallo por cada pareja de push legitima, y un guardian que grita sin motivo se acaba
+      # ignorando, que es como muere uno que si tenia razon. Espera y vuelve a mirar UNA vez; si
+      # a los noventa segundos siguen separados, el rojo es real.
+      - name: Los dos gemelos siguen coincidiendo
+        run: |
+          python guardian_gemelo.py && exit 0
+          echo "Separados. Puede ser la ventana entre los dos push: espero 90 s y vuelvo a mirar."
+          sleep 90
+          python guardian_gemelo.py
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Biblioteca estandar unicamente: no hay dependencias que instalar.
+      - name: El banco del detector
+        run: python skills/detector-control-negativo/test_detector_control_negativo.py
+
+      - name: La herramienta arranca y responde
+        run: python skills/detector-control-negativo/verificar_control_negativo.py -h
+
+      # La mutacion es lo que separa un banco de un adorno: sabotea el detector y exige que el
+      # banco se ponga rojo. Sale con 1 si algun sabotaje pasa callando, y tambien si alguna
+      # mutacion no llego a aplicarse.
+      - name: Verificacion por mutacion
+        run: python skills/detector-control-negativo/mutar.py
+
+      # LAS CIFRAS DEL README SE COMPRUEBAN, no solo que el comando termine bien. Sin esto, el
+      # ejemplo podria pasar a dar otros numeros y el CI seguiria verde mientras el README
+      # miente, que es exactamente el fallo contra el que se escribe este paso. `grep -F` porque
+      # los puntos de relleno no son patron aqui.
+      - name: El ejemplo del README se reproduce
+        shell: bash
+        run: |
+          python skills/detector-control-negativo/verificar_control_negativo.py \
+            --etiquetas ejemplo/etiquetas_ejemplo.yaml --listar | tee salida.txt
+          grep -F "bancos con casos propios .. 8" salida.txt \
+            || { echo "El README publica 8 bancos con casos propios y el ejemplo ya no lo da"; exit 1; }
+          grep -F "SIN control negativo ...... 2" salida.txt \
+            || { echo "El README publica 2 bancos sin brazo negativo y el ejemplo ya no lo da"; exit 1; }
+          grep -F "concuerda ............... 9 de 9" salida.txt \
+            || { echo "El README publica 9 de 9 contra las etiquetas y el ejemplo ya no lo da"; exit 1; }
+          echo "Las tres cifras del README coinciden con la salida."
