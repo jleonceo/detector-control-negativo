@@ -7,7 +7,7 @@ misma contra un conjunto etiquetado a mano antes de opinar de nadie.**
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![sin dependencias](https://img.shields.io/badge/dependencias-ninguna-brightgreen)
-![32 casos](https://img.shields.io/badge/banco-32%20casos-brightgreen)
+![38 casos](https://img.shields.io/badge/banco-38%20casos-brightgreen)
 ![mutación 6/6](https://img.shields.io/badge/mutaci%C3%B3n-6%2F6-brightgreen)
 ![licencia MIT](https://img.shields.io/badge/licencia-MIT-lightgrey)
 
@@ -66,8 +66,8 @@ dice nada.
 Son el material que el detector MIDE, así que varias de esas fixtures invocan símbolos que no
 existen a propósito y se caerían si alguien las ejecutara como pruebas. Se llaman `test_*.py` porque
 el criterio del detector es el nombre del fichero, y renombrarlas las sacaría de su propia medición.
-La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge 32
-pruebas, las 32 del banco del detector, y sale verde sin tocar una sola fixture.
+La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge 38
+pruebas, las 38 del banco del detector, y sale verde sin tocar una sola fixture.
 
 [Español](#español) · [English](#english)
 
@@ -233,6 +233,28 @@ propósito se cacen, que ningún banco de este repositorio se quede sin etiqueta
 no se invente cuando no hay ninguna, y que la exclusión declarada saque las rutas y las cuente
 aparte. El comando de verificación de más abajo los enumera al ejecutarse.
 
+### Y lo que la mutación 6 de 6 no vio, que son los seis casos últimos
+
+El día de publicar, con el banco en 32, la mutación cazando 6 de 6 y el acuerdo con las etiquetas en
+9 de 9, se le pidió a un auditor externo que buscara con material que **no estaba en el banco**.
+Encontró dos, y ninguno de los tres verdes anteriores podía verlos:
+
+- **La señal de nombre casaba por subcadena.** `test_protocolo_de_arranque` disparaba `NOMBRE_NEG`
+  porque «protocolo» contiene «roto», y `test_invalidate_cache_refreshes` porque «invalidate»
+  contiene «invalid». La señal que más pesa en el recuento daba por cubierto lo que no lo estaba, o
+  sea el falso negativo, que es la dirección cara.
+- **El lector de etiquetas fallaba abierto.** Cualquier valor que no reconociera pasaba a `false` en
+  silencio: la plantilla que imprime `--etiquetar` sin rellenar, o la palabra `verdadero`. La verdad
+  de referencia se envenenaba sola y el programa aconsejaba arreglar el criterio, que es el consejo
+  contrario. En una herramienta cuya tesis es fallar cerrado, esa era la incoherencia más cara.
+
+**Por qué no los cazó nada de lo anterior, que es lo que hay que aprender:** la mutación solo vigila
+las líneas que ya existen, y el acuerdo se mide contra un árbol de juguete sin un solo nombre
+adversarial ni una etiqueta mal escrita. Un arnés hereda el punto ciego del corpus con el que se
+alimenta. Los seis casos que cierran las dos grietas llevan `NoSeCazaPorSubcadena` y
+`EtiquetaIlegibleNoSeConvierteEnFalso` en el nombre de su clase, cada uno con su control al lado
+para que el arreglo no pueda ser dejar de mirar.
+
 Eso obliga a decir algo incómodo de la propia herramienta: **este detector cuenta qué bancos
 tienen un brazo negativo, y tener un brazo negativo no es discriminar.** Un banco puede llevar
 `assertFalse` y seguir pasando con el código roto. Lo que separa un banco de un adorno es mutar
@@ -317,11 +339,11 @@ palabra.
 ### Verificación
 
 ```bash
-python skills/detector-control-negativo/test_detector_control_negativo.py   # 32 casos
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 38 casos
 python skills/detector-control-negativo/mutar.py                           # 6 sabotajes
 ```
 
-**32 casos, y siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
+**38 casos, y siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
 cazar bancos sin control negativo, no tenerlos sería la ironía más cara del repositorio. El que
 más vale es `test_cn1_prosa_con_no_y_sin_no_dispara`: comprueba que la señal de texto **no**
 dispara sobre prosa llena de «no» y «sin», que es exactamente cómo la primera versión acabó
@@ -353,8 +375,9 @@ preguntan a `git` en local. El que sí sale a la red es `guardian_gemelo.py`, qu
 `api.github.com` para comparar este repositorio con su gemelo, y por eso trae una vía local con
 `GEMELO_LOCAL` para poder ejercitarlo sin ella. No forma parte de la skill ni de la medición.
 
-Ese 3.9 está **declarado y todavía no certificado**. En local solo se ha ejecutado con Python
-3.13 sobre Windows. Un repaso del código no encontró sintaxis ni biblioteca por encima de 3.9,
+Ese 3.9 está **declarado y todavía no certificado**. En local se ha ejecutado con Python 3.10, 3.13
+y 3.14, las tres sobre Windows, y en ninguna versión por debajo de 3.10, que es la que importaba.
+Un repaso del código no encontró sintaxis ni biblioteca por encima de 3.9,
 pero eso encuentra incompatibilidades y no certifica compatibilidad. Lo que la certifica es la
 matriz de CI (3.9, 3.11 y 3.13 sobre Windows, Linux y macOS) dando verde, y hasta el primer push
 no lo ha dado. Cuando lo dé, esta nota se corrige y no se borra.
@@ -531,11 +554,33 @@ forms** from any other signal that could mask them.
 
 The bench went from 24 to 26 cases.
 
-The four more up to today's 30 were added by the packaging, and each covers a piece that in the
-private tree either did not exist or sat nailed inside the script: that the deliberately planted
-benches get caught, that no bench of this repository goes unlabelled, that the git root is not
-invented where there is none, and that the declared exclusion drops the paths and counts them
-separately. The verification command further down lists them as it runs.
+The four more up to 30 were added by the packaging, and the next two, up to 32, came in while
+watching the fixture census and the mutator's restore. Each covers a piece that in the private tree
+either did not exist or sat nailed inside the script: that the deliberately planted benches get
+caught, that no bench of this repository goes unlabelled, that the git root is not invented where
+there is none, and that the declared exclusion drops the paths and counts them separately. The
+verification command further down lists them as it runs.
+
+### And what the 6-out-of-6 mutation did not see, which is the last six cases
+
+On publication day, with the bench at 32, mutation catching 6 of 6 and label agreement at 9 of 9, an
+outside auditor was asked to look with material that was **not in the bench**. It found two, and none
+of the three greens above could see either:
+
+- **The name signal matched on substrings.** `test_protocolo_de_arranque` fired `NOMBRE_NEG` because
+  the Spanish «protocolo» contains «roto» (broken), and `test_invalidate_cache_refreshes` because
+  «invalidate» contains «invalid». The signal that weighs most in the count was marking as covered
+  what was not, the false negative, which is the expensive direction.
+- **The label reader failed open.** Any value it did not recognise silently became `false`: the
+  template `--etiquetar` prints when left unfilled, or the Spanish word `verdadero`. The reference
+  truth poisoned itself and the program advised fixing the criterion, which is the opposite advice.
+  In a tool whose whole thesis is failing closed, that was the costliest contradiction.
+
+**Why nothing above caught them, which is the lesson:** mutation only guards lines that already
+exist, and agreement is measured against a toy tree without a single adversarial name or a single
+malformed label. A harness inherits the blind spot of the corpus that feeds it. The six cases closing
+both gaps carry `NoSeCazaPorSubcadena` and `EtiquetaIlegibleNoSeConvierteEnFalso` in their class
+names, each with its control alongside so the fix cannot be to stop looking.
 
 Which forces an uncomfortable admission about the tool itself: **this detector counts which
 benches have a negative arm, and having a negative arm is not the same as discriminating.** A
@@ -574,7 +619,7 @@ Those fixtures are the material the detector MEASURES, so several of them call s
 exist on purpose and would fail if anybody ran them as tests. They are named `test_*.py` because the
 detector's criterion is the filename, and renaming them would drop them out of their own
 measurement. The exclusion lives in `conftest.py`: today `python -m pytest -q` over this repository
-collects 32 tests, all 32 from the detector's own bench, and comes out green without touching a
+collects 38 tests, all 38 from the detector's own bench, and comes out green without touching a
 single fixture.
 
 Of the pass over the private tree this repository stands behind one thing only. It is a property of
@@ -630,11 +675,11 @@ word.
 ### Verification
 
 ```bash
-python skills/detector-control-negativo/test_detector_control_negativo.py   # 32 cases
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 38 cases
 python skills/detector-control-negativo/mutar.py                           # 6 sabotages
 ```
 
-**32 cases, seven of them negative controls marked `CN`.** In a bench whose whole purpose is
+**38 cases, seven of them negative controls marked `CN`.** In a bench whose whole purpose is
 catching benches without negative controls, having none would be the most expensive irony in the
 repository. The one that matters most is `test_cn1_prosa_con_no_y_sin_no_dispara`: it checks that
 the text signal does **not** fire on prose full of «no» and «sin», which is exactly how the first
@@ -666,8 +711,9 @@ need they ask of local `git`. The one that does go out is `guardian_gemelo.py`, 
 route through `GEMELO_LOCAL` so it can be exercised without the network. It is part of neither the
 skill nor the measurement.
 
-That 3.9 is **declared and not yet certified**. Locally it has only been run with Python 3.13 on
-Windows. A read-through found no syntax or library above 3.9, but that finds incompatibilities and
+That 3.9 is **declared and not yet certified**. Locally it has been run with Python 3.10, 3.13 and
+3.14, all three on Windows, and on nothing below 3.10, which is the version that mattered.
+A read-through found no syntax or library above 3.9, but that finds incompatibilities and
 does not certify compatibility. What certifies it is the CI matrix (3.9, 3.11 and 3.13 across
 Windows, Linux and macOS) going green, and until the first push it has not. When it does, this note
 gets corrected and not deleted.

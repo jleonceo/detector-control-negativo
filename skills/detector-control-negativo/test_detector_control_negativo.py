@@ -17,6 +17,7 @@ lo prueban sobre el arbol de verdad, que es donde aparecen los defectos que nadi
 este repositorio trae bancos plantados a proposito en `ejemplo/bancos/` y su etiqueta al lado.
 """
 import fnmatch
+import io
 import importlib.util
 import os
 import shutil
@@ -427,6 +428,86 @@ class ElArnesCumpleSuPropioContrato(unittest.TestCase):
     # motivo equivocado convierte el arnes en el adorno que este repositorio denuncia. Lo que
     # cubre esa grieta ya esta puesto: si un ancla envejece, `mutar.py` falla cerrado y lo canta
     # como ERROR, y el flujo de CI se pone rojo.
+
+
+class TestElNombreNoSeCazaPorSubcadena(unittest.TestCase):
+    r"""La senal de nombre buscaba sus palabras SIN anclar, asi que cazaba dentro de otras.
+
+    LO ENCONTRO FABLE el 31/07/2026 auditando el repositorio antes de publicarlo:
+    `def test_protocolo_de_arranque` disparaba NOMBRE_NEG porque «protocolo» contiene «roto», y
+    `test_invalidate_cache_refreshes` porque «invalidate» contiene «invalid». No era un suelo
+    declarado; era que las palabras clave iban sueltas dentro del `\w*` de los dos lados.
+
+    IMPORTA MAS DE LO QUE PARECE: el propio README dice que la senal de nombre es la que mas peso
+    tiene en el recuento, asi que un banco sin control negativo se daba por cubierto por el nombre
+    de una funcion que hablaba de otra cosa.
+    """
+
+    def senales(self, texto):
+        return det.senales_de(texto)
+
+    def test_protocolo_no_es_roto(self):
+        self.assertNotIn("NOMBRE_NEG", self.senales(
+            "def test_protocolo_de_arranque():\n    assert arrancar() == 1\n"))
+
+    def test_invalidate_no_es_invalid(self):
+        self.assertNotIn("NOMBRE_NEG", self.senales(
+            "def test_invalidate_cache_refreshes():\n    assert refrescar() is True\n"))
+
+    def test_el_nombre_negativo_DE_VERDAD_sigue_cazandose(self):
+        """El control. Sin esto, el arreglo podria ser dejar de mirar el nombre."""
+        for nombre in ("def test_no_admite_vacio():", "def test_rechaza_duplicado():",
+                       "def test_entrada_invalida():", "def test_fichero_roto():",
+                       "def test_sin_permiso():", "def test_falla_al_cerrar():"):
+            with self.subTest(nombre=nombre):
+                self.assertIn("NOMBRE_NEG", self.senales(nombre + "\n    pass\n"))
+
+
+class TestLaEtiquetaIlegibleNoSeConvierteEnFalso(unittest.TestCase):
+    """El lector de etiquetas fallaba ABIERTO: cualquier valor no reconocido pasaba a `false`.
+
+    LO ENCONTRO FABLE el 31/07/2026 con dos entradas que cualquiera escribiria: la plantilla que
+    imprime el propio `--etiquetar` pegada sin rellenar, y la palabra `verdadero` en castellano.
+    Las dos salian `false` en silencio, envenenaban la verdad de referencia, y el programa
+    aconsejaba «se arregla el criterio, no la etiqueta», que es el consejo contrario al que toca.
+
+    ES LA INCOHERENCIA MAS GRAVE que encontro la auditoria, porque la tesis entera de esta
+    herramienta es fallar cerrado: su mutador tumba la ejecucion si un ancla no muerde.
+    """
+
+    def escribir(self, cuerpo):
+        d = tempfile.mkdtemp(prefix="etiq_")
+        p = os.path.join(d, "etiquetas.yaml")
+        with io.open(p, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(cuerpo)
+        self.addCleanup(shutil.rmtree, d, True)
+        return p
+
+    def test_la_plantilla_sin_rellenar_no_pasa_por_false(self):
+        p = self.escribir("bancos:\n  - banco: x/test_a.py\n"
+                          "    tiene_control_negativo:   # true | false | agregador\n")
+        with self.assertRaises(ValueError) as e:
+            det.leer_etiquetas(p)
+        self.assertIn("test_a.py", str(e.exception))
+
+    def test_un_valor_en_castellano_no_pasa_por_false(self):
+        p = self.escribir("bancos:\n  - banco: x/test_b.py\n"
+                          "    tiene_control_negativo: verdadero\n")
+        with self.assertRaises(ValueError):
+            det.leer_etiquetas(p)
+
+    def test_los_valores_declarados_siguen_valiendo(self):
+        """El control. Sin esto, el arreglo podria ser rechazarlo todo."""
+        p = self.escribir("bancos:\n"
+                          "  - banco: x/test_1.py\n    tiene_control_negativo: true\n"
+                          "  - banco: x/test_2.py\n    tiene_control_negativo: false\n"
+                          "  - banco: x/test_3.py\n    tiene_control_negativo: si\n"
+                          "  - banco: x/test_4.py\n    tiene_control_negativo: agregador\n")
+        d = det.leer_etiquetas(p)
+        self.assertEqual(d["x/test_1.py"], "true")
+        self.assertEqual(d["x/test_2.py"], "false")
+        self.assertEqual(d["x/test_3.py"], "true")
+        self.assertEqual(d["x/test_4.py"], "agregador")
 
 
 if __name__ == "__main__":

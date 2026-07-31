@@ -106,8 +106,20 @@ _RE_VEREDICTO_MALO = re.compile(
 # Una senal que marca al 100 % de la poblacion no separa nada, solo baja el recuento, que
 # es como se fabricaron los 112 -> 31 del historial de arriba. Se caza porque el informe
 # imprime el reparto por senal; con el total a secas habria pasado por buena.
+# LAS PALABRAS VAN ANCLADAS A UN TROZO DE NOMBRE, no sueltas dentro de otra palabra.
+#
+# Antes iban entre dos `\w*` y cazaban por subcadena: `test_protocolo_de_arranque` disparaba porque
+# «protocolo» contiene «roto», y `test_invalidate_cache_refreshes` porque «invalidate» contiene
+# «invalid». Lo encontro una auditoria independiente el 31/07/2026, y no era un suelo declarado:
+# era que la senal con mas peso del recuento daba por cubierto lo que no lo estaba.
+#
+# SE ANCLA POR LOS DOS LADOS, y el del final es el que costo. Cada palabra tiene que empezar tras
+# `_` y terminar donde acaba el trozo de nombre, con sus terminaciones de genero y numero escritas
+# una a una. Solo con el ancla de delante, `test_invalidate_cache` seguia disparando: «invalidate»
+# empieza tras un guion bajo y ahi el problema estaba al otro lado de la palabra.
 _RE_NOMBRE_NEG = re.compile(
-    r"def\s+\w*(_no_|_sin_|rechaz|bloque|invalid|falla|fallo|malo|roto|vacio)\w*", re.I)
+    r"def\s+\w*?(?:^|_)(?:no|sin|rechaz(?:a|ar|an|o)?|bloque(?:a|ar|an|o)?|invalid(?:[ao]s?)?|"
+    r"fall(?:a|o|an|as|os)?|mal[ao]s?|rot[ao]s?|vaci[ao]s?)(?![a-zA-ZáéíóúñÁÉÍÓÚÑ])", re.I)
 
 # Donde vive una asercion. Se busca la senal de significado SOLO en estas lineas: un `== 0`
 # suelto dentro de la construccion del fixture no es un control negativo, es aritmetica.
@@ -235,12 +247,30 @@ def leer_etiquetas(path=ETIQUETAS):
                 actual = l.split(":", 1)[1].strip().strip("\"'")
             elif l.startswith("tiene_control_negativo:") and actual:
                 valor = l.split(":", 1)[1].strip().lower()
-                if valor.startswith("agregador"):
-                    etiquetas[actual.replace("\\", "/")] = "agregador"
-                else:
-                    etiquetas[actual.replace("\\", "/")] = (
-                        "true" if valor in ("true", "si", "sí", "yes") else "false")
+                # Se corta el comentario de la plantilla ANTES de juzgar el valor, para que
+                # `true   # true | false | agregador` valga y `# true | false` a secas no.
+                valor = valor.split("#", 1)[0].strip()
+                clave = actual.replace("\\", "/")
                 actual = None
+                if valor.startswith("agregador"):
+                    etiquetas[clave] = "agregador"
+                elif valor in ("true", "si", "sí", "yes"):
+                    etiquetas[clave] = "true"
+                elif valor in ("false", "no", "not"):
+                    etiquetas[clave] = "false"
+                else:
+                    # SE PARA. Antes cualquier valor no reconocido pasaba a `false` en silencio,
+                    # asi que la plantilla sin rellenar y la palabra `verdadero` envenenaban la
+                    # verdad de referencia, el detector salia con 1, y el programa aconsejaba
+                    # arreglar el criterio cuando lo roto era el fichero de etiquetas. Lo encontro
+                    # una auditoria independiente el 31/07/2026, y era la incoherencia mas grave
+                    # del repositorio: la tesis entera de esta herramienta es fallar cerrado.
+                    raise ValueError(
+                        "etiqueta ilegible en %s, banco %s: %r no es un valor valido. "
+                        "Los validos son true/si/yes, false/no y agregador. Una etiqueta que no "
+                        "se entiende no se convierte en 'false': se para, porque de ahi sale la "
+                        "verdad con la que se puntua el detector."
+                        % (path, clave, valor or "(vacio)"))
     return etiquetas
 
 

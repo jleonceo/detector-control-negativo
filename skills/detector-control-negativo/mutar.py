@@ -56,8 +56,11 @@ MUTACIONES = [
      'r"_CN_|control(es)?', 'r"control(es)?',
      "test_ca2_marca_literal_cn_aislada"),
 
-    (2, "borra los nombres `_no_` y `_sin_` de la senal de nombre",
-     r"(_no_|_sin_|rechaz", r"(rechaz",
+    # El ancla se reescribio el 31/07/2026 al anclar las palabras por los dos lados. La vieja
+    # (`(_no_|_sin_|rechaz`) dejo de aparecer en el fichero y el mutador lo canto en vez de dar por
+    # cazada una mutacion que nunca se aplico, que es justo su contrato.
+    (2, "borra los nombres `no` y `sin` de la senal de nombre",
+     r"(?:no|sin|rechaz", r"(?:rechaz",
      "test_ca2_nombre_neg_no_sin_aislado"),
 
     (3, "deja de reconocer los agregadores, que fue el fallo de la primera pasada",
