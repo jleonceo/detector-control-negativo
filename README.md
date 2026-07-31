@@ -211,10 +211,10 @@ Antes de preparar este repositorio se le pasaron **cuatro mutaciones al propio d
 una verificada mordida a mordida **antes** de mirar qué decía el banco. Es lo contrario de
 presumir de suite verde: se rompe el código a mano y se mira si alguien se queja.
 
-- **Dos mordieron limpio.** Al romper el reconocimiento de agregadores (el fallo que en la primera
+- Dos mordieron limpio. Al romper el reconocimiento de agregadores (el fallo que en la primera
   pasada confundió 5 de 24) cayó el caso que compara el detector con las etiquetas, y cayó
   señalando con nombre y apellido el banco mal clasificado.
-- **Dos no rompieron nada. Ahí estaba el agujero.** Al borrar el literal `_CN_` del
+- Dos no rompieron nada. Ahí estaba el agujero. Al borrar el literal `_CN_` del
   reconocimiento de la marca, y al borrar los nombres `_no_` y `_sin_` de la señal de nombre,
   **no cayó ni un test**. Cada una de esas dos formas dependía en exclusiva de un único banco del
   árbol medido, y ninguno de esos dos bancos estaba en el fichero de etiquetas. Un banco de 24
@@ -239,11 +239,11 @@ El día de publicar había tres verdes. El banco en 32. La mutación en 6 de 6. 
 etiquetas en 9 de 9. Se le pidió entonces a un auditor externo que buscara con material que **no
 estaba en el banco**. Encontró dos defectos, y ninguno de los tres verdes podía verlos.
 
-- **La señal de nombre casaba por subcadena.** `test_protocolo_de_arranque` disparaba `NOMBRE_NEG`
+- La señal de nombre casaba por subcadena. `test_protocolo_de_arranque` disparaba `NOMBRE_NEG`
   porque «protocolo» contiene «roto». `test_invalidate_cache_refreshes`, porque «invalidate»
   contiene «invalid». La señal que más pesa en el recuento daba por cubierto lo que no lo estaba.
   Es el falso negativo, la dirección cara.
-- **El lector de etiquetas fallaba abierto.** Cualquier valor que no reconociera pasaba a `false` en
+- El lector de etiquetas fallaba abierto. Cualquier valor que no reconociera pasaba a `false` en
   silencio. La plantilla que imprime `--etiquetar` sin rellenar, por ejemplo. O la palabra
   `verdadero`. La verdad de referencia se envenenaba sola, y encima el programa aconsejaba arreglar
   el criterio. Es el consejo contrario. En una herramienta cuya tesis es fallar cerrado, esa era la
@@ -539,10 +539,10 @@ Before this repository was prepared, **four mutations were run against the detec
 one verified to bite **before** looking at what the bench said. This is the opposite of boasting
 about a green suite: you break the code by hand and see whether anybody complains.
 
-- **Two bit cleanly.** Breaking aggregator recognition (the fault that misfiled 5 of 24 in the
+- Two bit cleanly. Breaking aggregator recognition (the fault that misfiled 5 of 24 in the
   first pass) brought down the case that compares the detector against the labels. It fell naming
   the misfiled bench.
-- **Two broke nothing. That was the hole.** Deleting the `_CN_` literal from marker
+- Two broke nothing. That was the hole. Deleting the `_CN_` literal from marker
   recognition, and deleting the `_no_` and `_sin_` names from the name signal, **took down not one
   test**. Each of those two forms depended exclusively on a single bench in the measured tree.
   Neither of those benches was in the label file. A 24-case bench, green, and two lines of the
@@ -567,11 +567,11 @@ On publication day there were three greens. The bench at 32. Mutation at 6 of 6.
 9 of 9. An outside auditor was then asked to look with material that was **not in the bench**. It
 found two defects, and none of the three greens could see either.
 
-- **The name signal matched on substrings.** `test_protocolo_de_arranque` fired `NOMBRE_NEG` because
+- The name signal matched on substrings. `test_protocolo_de_arranque` fired `NOMBRE_NEG` because
   the Spanish «protocolo» contains «roto» (broken). `test_invalidate_cache_refreshes`, because
   «invalidate» contains «invalid». The signal that weighs most in the count was marking as covered
   what was not. That is the false negative, the expensive direction.
-- **The label reader failed open.** Any value it did not recognise silently became `false`. The
+- The label reader failed open. Any value it did not recognise silently became `false`. The
   template `--etiquetar` prints when left unfilled, for one. Or the Spanish word `verdadero`. The
   reference truth poisoned itself, and the program then advised fixing the criterion. That is the
   opposite advice. In a tool whose whole thesis is failing closed, that was the costliest
