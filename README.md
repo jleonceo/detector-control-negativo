@@ -233,27 +233,27 @@ propósito se cacen, que ningún banco de este repositorio se quede sin etiqueta
 no se invente cuando no hay ninguna, y que la exclusión declarada saque las rutas y las cuente
 aparte. El comando de verificación de más abajo los enumera al ejecutarse.
 
-### Y lo que la mutación 6 de 6 no vio, que son los seis casos últimos
+### Lo que la mutación 6 de 6 no vio
 
-El día de publicar, con el banco en 32, la mutación cazando 6 de 6 y el acuerdo con las etiquetas en
-9 de 9, se le pidió a un auditor externo que buscara con material que **no estaba en el banco**.
-Encontró dos, y ninguno de los tres verdes anteriores podía verlos:
+El día de publicar había tres verdes. El banco en 32. La mutación en 6 de 6. El acuerdo con las
+etiquetas en 9 de 9. Se le pidió entonces a un auditor externo que buscara con material que **no
+estaba en el banco**. Encontró dos defectos, y ninguno de los tres verdes podía verlos.
 
 - **La señal de nombre casaba por subcadena.** `test_protocolo_de_arranque` disparaba `NOMBRE_NEG`
-  porque «protocolo» contiene «roto», y `test_invalidate_cache_refreshes` porque «invalidate»
-  contiene «invalid». La señal que más pesa en el recuento daba por cubierto lo que no lo estaba, o
-  sea el falso negativo, que es la dirección cara.
+  porque «protocolo» contiene «roto». `test_invalidate_cache_refreshes`, porque «invalidate»
+  contiene «invalid». La señal que más pesa en el recuento daba por cubierto lo que no lo estaba.
+  Es el falso negativo, la dirección cara.
 - **El lector de etiquetas fallaba abierto.** Cualquier valor que no reconociera pasaba a `false` en
-  silencio: la plantilla que imprime `--etiquetar` sin rellenar, o la palabra `verdadero`. La verdad
-  de referencia se envenenaba sola y el programa aconsejaba arreglar el criterio, que es el consejo
-  contrario. En una herramienta cuya tesis es fallar cerrado, esa era la incoherencia más cara.
+  silencio. La plantilla que imprime `--etiquetar` sin rellenar, por ejemplo. O la palabra
+  `verdadero`. La verdad de referencia se envenenaba sola, y encima el programa aconsejaba arreglar
+  el criterio. Es el consejo contrario. En una herramienta cuya tesis es fallar cerrado, esa era la
+  incoherencia más cara.
 
-**Por qué no los cazó nada de lo anterior, que es lo que hay que aprender:** la mutación solo vigila
-las líneas que ya existen, y el acuerdo se mide contra un árbol de juguete sin un solo nombre
-adversarial ni una etiqueta mal escrita. Un arnés hereda el punto ciego del corpus con el que se
-alimenta. Los seis casos que cierran las dos grietas llevan `NoSeCazaPorSubcadena` y
-`EtiquetaIlegibleNoSeConvierteEnFalso` en el nombre de su clase, cada uno con su control al lado
-para que el arreglo no pueda ser dejar de mirar.
+**Por qué no los cazó nada de lo anterior:** la mutación solo vigila las líneas que ya existen. El
+acuerdo se mide contra un árbol de juguete, sin un solo nombre adversarial y sin una etiqueta mal
+escrita. Un arnés hereda el punto ciego del corpus que lo alimenta. Los seis casos que cierran las
+dos grietas llevan `NoSeCazaPorSubcadena` y `EtiquetaIlegibleNoSeConvierteEnFalso` en el nombre de
+su clase. Cada uno trae su control al lado, para que el arreglo no pueda ser dejar de mirar.
 
 Eso obliga a decir algo incómodo de la propia herramienta: **este detector cuenta qué bancos
 tienen un brazo negativo, y tener un brazo negativo no es discriminar.** Un banco puede llevar
@@ -554,33 +554,34 @@ forms** from any other signal that could mask them.
 
 The bench went from 24 to 26 cases.
 
-The four more up to 30 were added by the packaging, and the next two, up to 32, came in while
-watching the fixture census and the mutator's restore. Each covers a piece that in the private tree
-either did not exist or sat nailed inside the script: that the deliberately planted benches get
-caught, that no bench of this repository goes unlabelled, that the git root is not invented where
-there is none, and that the declared exclusion drops the paths and counts them separately. The
-verification command further down lists them as it runs.
+The four more up to 30 were added by the packaging. The next two, up to 32, came in while watching
+the fixture census and the mutator's restore. Each covers a piece that in the private tree either
+did not exist or sat nailed inside the script: the deliberately planted benches getting caught, no
+bench of this repository going unlabelled, the git root never invented where there is none, the
+declared exclusion dropping the paths to count them apart. The verification command further down
+lists them as it runs.
 
-### And what the 6-out-of-6 mutation did not see, which is the last six cases
+### What the 6-out-of-6 mutation did not see
 
-On publication day, with the bench at 32, mutation catching 6 of 6 and label agreement at 9 of 9, an
-outside auditor was asked to look with material that was **not in the bench**. It found two, and none
-of the three greens above could see either:
+On publication day there were three greens. The bench at 32. Mutation at 6 of 6. Label agreement at
+9 of 9. An outside auditor was then asked to look with material that was **not in the bench**. It
+found two defects, and none of the three greens could see either.
 
 - **The name signal matched on substrings.** `test_protocolo_de_arranque` fired `NOMBRE_NEG` because
-  the Spanish «protocolo» contains «roto» (broken), and `test_invalidate_cache_refreshes` because
+  the Spanish «protocolo» contains «roto» (broken). `test_invalidate_cache_refreshes`, because
   «invalidate» contains «invalid». The signal that weighs most in the count was marking as covered
-  what was not, the false negative, which is the expensive direction.
-- **The label reader failed open.** Any value it did not recognise silently became `false`: the
-  template `--etiquetar` prints when left unfilled, or the Spanish word `verdadero`. The reference
-  truth poisoned itself and the program advised fixing the criterion, which is the opposite advice.
-  In a tool whose whole thesis is failing closed, that was the costliest contradiction.
+  what was not. That is the false negative, the expensive direction.
+- **The label reader failed open.** Any value it did not recognise silently became `false`. The
+  template `--etiquetar` prints when left unfilled, for one. Or the Spanish word `verdadero`. The
+  reference truth poisoned itself, and the program then advised fixing the criterion. That is the
+  opposite advice. In a tool whose whole thesis is failing closed, that was the costliest
+  contradiction.
 
-**Why nothing above caught them, which is the lesson:** mutation only guards lines that already
-exist, and agreement is measured against a toy tree without a single adversarial name or a single
-malformed label. A harness inherits the blind spot of the corpus that feeds it. The six cases closing
-both gaps carry `NoSeCazaPorSubcadena` and `EtiquetaIlegibleNoSeConvierteEnFalso` in their class
-names, each with its control alongside so the fix cannot be to stop looking.
+**Why nothing above caught them:** mutation only guards lines that already exist. Agreement is
+measured against a toy tree, without a single adversarial name and without a single malformed label.
+A harness inherits the blind spot of the corpus that feeds it. The six cases closing both gaps carry
+`NoSeCazaPorSubcadena` and `EtiquetaIlegibleNoSeConvierteEnFalso` in their class names. Each brings
+its control alongside, so the fix cannot be to stop looking.
 
 Which forces an uncomfortable admission about the tool itself: **this detector counts which
 benches have a negative arm, and having a negative arm is not the same as discriminating.** A
