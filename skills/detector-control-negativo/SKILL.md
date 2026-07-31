@@ -29,7 +29,7 @@ metadata:
 > 48, luego 31, y una revisión a mano de tres casos encontró dos falsos positivos, o sea que la
 > cifra de verdad rondaba los diez. **Ninguna versión estaba mal programada: cada afinado del
 > criterio medía un objeto distinto.** Una cifra que solo baja conforme se mira mejor no ha
-> convergido en ninguna parada anterior, y en las tres primeras se habría actuado sobre ella.
+> convergido en ninguna parada anterior. En las tres primeras se habría actuado sobre ella.
 
 ## Lo primero no es el recuento
 
@@ -58,13 +58,13 @@ python ${CLAUDE_SKILL_DIR}/verificar_control_negativo.py --raiz . --etiquetar
 |---|---|
 | `--raiz RUTA` | el árbol a medir; por defecto, la raíz git del directorio actual |
 | `--etiquetas FICHERO` | la verdad de referencia con la que se puntúa el detector |
-| `--excluir SUBCADENA` | deja fuera las rutas que la contengan; repetible, y se cuentan aparte |
-| `--listar` | cada banco con su veredicto, y cada veredicto con la señal que lo disparó |
+| `--excluir SUBCADENA` | deja fuera las rutas que la contengan; repetible y se cuentan aparte |
+| `--listar` | cada banco con su veredicto y cada veredicto con la señal que lo disparó |
 | `--etiquetar` | plantilla YAML de los bancos que aún no tienen etiqueta |
 
-**La primera ejecución en un repositorio nuevo sale con 2**, y está bien que sea así: todavía no
-hay etiquetas, y sin ellas el recuento es una aproximación sin puntuar. El camino es
-`--etiquetar`, abrir a mano los ficheros que salgan, y escribir la etiqueta con su evidencia.
+**La primera ejecución en un repositorio nuevo sale con 2** y está bien que sea así: todavía no
+hay etiquetas y sin ellas el recuento es una aproximación sin puntuar. El camino es
+`--etiquetar`, abrir a mano los ficheros que salgan y escribir la etiqueta con su evidencia.
 
 ## El orden del trabajo
 
@@ -75,8 +75,8 @@ hay etiquetas, y sin ellas el recuento es una aproximación sin puntuar. El cami
    equivoca, se ve aquí y no en la portada de un informe.
 3. **Etiquetar a mano** antes de tocar el criterio. El fichero de etiquetas lleva por banco su
    veredicto, la línea que lo demuestra y la fecha.
-4. **Una señal nueva entra solo cuando un caso ETIQUETADO la exige, y se declara qué caso.** No
-   cuando a alguien se le ocurre que podría existir, y desde luego no porque baje el recuento.
+4. **Una señal nueva entra solo cuando un caso ETIQUETADO la exige y se declara qué caso.** No
+   cuando a alguien se le ocurre que podría existir y desde luego no porque baje el recuento.
 5. **Si el detector discrepa de las etiquetas, se arregla el criterio.** Acomodar la verdad de
    referencia al instrumento es lo único que está prohibido de raíz.
 6. **Al publicar la cifra, publicar el comando entero al lado**: la raíz, cada `--excluir` con su
@@ -113,7 +113,7 @@ tiempo y están dentro del código:
   banco puede llevar `assertFalse` y seguir pasando con el código roto. Eso lo dice mutar el
   código y ver si el banco cae.
 - **No cuenta lo que git no publica.** El universo sale de `git ls-files`, así que un banco del
-  árbol de trabajo que nadie ha añadido queda fuera, y es un suelo declarado.
+  árbol de trabajo que nadie ha añadido queda fuera. Es un suelo declarado.
 - **No entra por el nombre de un fichero que no parezca un banco.** El criterio es
   `test_*.py`, `run_tests*.py` o `*_test.py`. Otro esquema de nombres necesita otro criterio.
 

@@ -20,7 +20,7 @@ conviene no repetir, y de ahí sale todo lo demás de este documento.
 
 Cada afinado daba menos. **Ninguna versión estaba mal programada: cada una medía un objeto
 distinto.** Un número que solo baja conforme se mira mejor no ha convergido en ninguna parada
-anterior, y en las tres primeras se habría actuado sobre él. Además el script de aquel día no
+anterior. En las tres primeras se habría actuado sobre él. Además el script de aquel día no
 quedó en disco, así que volver a preguntar la cifra obligaba a repetir la investigación entera.
 
 **De ahí los dos requisitos que ordenan todo lo demás:** el contador vive en disco, y el criterio
@@ -28,7 +28,7 @@ se puntúa contra una verdad de referencia en vez de juzgarse por el tamaño de 
 
 ## Población: siempre los tres números
 
-El informe declara **tres** cifras y nunca una: lo que hay, lo que ha decidido dejar fuera, y con
+El informe declara **tres** cifras y nunca una: lo que hay, lo que ha decidido dejar fuera y con
 qué criterio. Decir «131 bancos» sin lo demás es lo que hace que una cifra parezca más firme de lo
 que es.
 
@@ -100,8 +100,8 @@ el mismo error de objeto que costó dos de las cifras de la tabla de arriba.
 
 ## La regla de parada evita repetir el fallo
 
-**Una señal nueva entra solo cuando un caso ETIQUETADO la exige, y se declara qué caso.** No
-cuando se le ocurre a alguien que podría existir, y desde luego no porque baje el recuento.
+**Una señal nueva entra solo cuando un caso ETIQUETADO la exige y se declara qué caso.** No
+cuando se le ocurre a alguien que podría existir y desde luego no porque baje el recuento.
 
 Las tres que entraron al etiquetar a mano, con el caso que las exigió:
 
@@ -109,7 +109,7 @@ Las tres que entraron al etiquetar a mano, con el caso que las exigió:
 |---|---|
 | `is False` dentro de `ESPERA_CERO` | un banco con cinco `check(permitir is False, "BLOQUEA…")` |
 | `not in` dentro de `ESPERA_CERO` | un banco con `check("F" not in filas, …)` |
-| `ETIQUETA_NEG` | un banco cuya tabla de casos dice «NO toca un mensaje que ya está limpio», y otro que afirma el veredicto `NO_CONFIA` |
+| `ETIQUETA_NEG` | un banco cuya tabla de casos dice «NO toca un mensaje que ya está limpio» y otro que afirma el veredicto `NO_CONFIA` |
 
 Y la comprobación que hace honesto el conjunto: **los once bancos que la señal nueva rescata están
 los once en la lista etiquetada a mano.** No rescata ni uno sin verificar.
@@ -131,4 +131,4 @@ Dos límites, dichos antes de que alguien cite el número:
 - **No dice si un banco es bueno.** Para eso está mutar el código y ver si el banco cae, que es
   otro instrumento y otro coste.
 - **No cuenta lo que git no publica.** Un banco del árbol de trabajo que nadie ha añadido queda
-  fuera, y es un suelo declarado.
+  fuera. Es un suelo declarado.

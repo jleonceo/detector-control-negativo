@@ -2,7 +2,7 @@
 
 **Tu suite de pruebas está verde. La pregunta que nadie hace es si esa suite sabría ponerse roja.
 Un banco que solo comprueba que lo bueno pasa aprueba igual al código bueno y al roto. Esta
-herramienta cuenta cuántos hay así en un repositorio, dice cuáles y por qué, y se puntúa a sí
+herramienta cuenta cuántos hay así en un repositorio, dice cuáles y por qué. Y se puntúa a sí
 misma contra un conjunto etiquetado a mano antes de opinar de nadie.**
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
@@ -66,8 +66,8 @@ dice nada.
 Son el material que el detector MIDE, así que varias de esas fixtures invocan símbolos que no
 existen a propósito y se caerían si alguien las ejecutara como pruebas. Se llaman `test_*.py` porque
 el criterio del detector es el nombre del fichero, y renombrarlas las sacaría de su propia medición.
-La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge 38
-pruebas, las 38 del banco del detector, y sale verde sin tocar una sola fixture.
+La exclusión vive en `conftest.py`: hoy `python -m pytest -q` sobre este repositorio recoge las 38
+pruebas del banco del detector y sale verde sin tocar una sola fixture.
 
 [Español](#español) · [English](#english)
 
@@ -83,7 +83,7 @@ código bueno del roto.
 Esa es otra pregunta.
 
 El caso más común es un banco que comprueba solo el camino bueno: se le pasa una entrada
-correcta, se comprueba que sale el resultado correcto, y ahí acaba. Ese banco da verde. Y sigue
+correcta, se comprueba que sale el resultado correcto y ahí acaba. Ese banco da verde. Y sigue
 dando verde cuando alguien rompe la validación de entrada, porque nadie le pregunta nunca qué
 hace con una entrada mala. En la jerga es un banco sin **control negativo**: le falta el caso que
 afirma lo que la herramienta debe rechazar, bloquear, dejar vacío o marcar como inválido.
@@ -116,7 +116,7 @@ Los tres bancos son `Aplicaciones/05_capa_confianza_rag/suite_aceptacion/test_c1
 `pipeline/eval_suite/evaluador/test_clasificador_motivo.py`. Van con la cifra porque un 3 a secas
 no se puede auditar.
 
-Tres cosas que hay que saber para leer esa fila, y ninguna es un detalle:
+Tres cosas que hay que saber para leer esa fila, ninguna de ellas un detalle:
 
 1. **Ese comando no lo puede teclear quien lea esto.** El árbol es privado y no viaja en el
    repositorio. Lo que se publica es el método en vez de un resultado comprobable desde fuera.
@@ -129,7 +129,7 @@ Tres cosas que hay que saber para leer esa fila, y ninguna es un detalle:
    son 131 bancos con casos propios **más** 5 agregadores **más** 3 excluidos. Y el denominador se
    movió ese mismo día: entraron tres bancos al árbol a las 12:34, a las 13:02 y a las 14:18.
 
-**Ninguna versión estaba mal programada.** Cada afinado medía un objeto distinto, y cada uno daba
+**Ninguna versión estaba mal programada.** Cada afinado medía un objeto distinto y cada uno daba
 menos que el anterior. Una cifra que solo baja conforme se mira mejor no ha convergido en ninguna
 parada anterior: en las tres primeras se habría actuado sobre ella, y la primera habría declarado
 un problema diez veces mayor que el real. Encima, el script de aquel día no quedó en disco, así
@@ -160,7 +160,7 @@ acomoda al instrumento y la medición deja de valer.
 
 `tiene_control_negativo` tiene un tercer valor, `agregador`. No es un adorno: hay ficheros que
 se llaman como un banco y no tienen un solo caso propio, porque descubren otros y los lanzan.
-Contarlos entre los carentes es contar el objeto equivocado, y en la primera pasada cinco de los
+Contarlos entre los carentes es contar el objeto equivocado. En la primera pasada cinco de los
 veinticuatro señalados eran justo eso.
 
 ### Por eso el código de salida no habla del repositorio
@@ -212,13 +212,13 @@ una verificada mordida a mordida **antes** de mirar qué decía el banco. Es lo 
 presumir de suite verde: se rompe el código a mano y se mira si alguien se queja.
 
 - Dos mordieron limpio. Al romper el reconocimiento de agregadores (el fallo que en la primera
-  pasada confundió 5 de 24) cayó el caso que compara el detector con las etiquetas, y cayó
+  pasada confundió 5 de 24) cayó el caso que compara el detector con las etiquetas y cayó
   señalando con nombre y apellido el banco mal clasificado.
 - Dos no rompieron nada. Ahí estaba el agujero. Al borrar el literal `_CN_` del
-  reconocimiento de la marca, y al borrar los nombres `_no_` y `_sin_` de la señal de nombre,
+  reconocimiento de la marca y al borrar los nombres `_no_` y `_sin_` de la señal de nombre,
   **no cayó ni un test**. Cada una de esas dos formas dependía en exclusiva de un único banco del
-  árbol medido, y ninguno de esos dos bancos estaba en el fichero de etiquetas. Un banco de 24
-  casos, verde, y dos líneas del criterio que cualquiera podía borrar mañana sin que nadie se
+  árbol medido. Ninguno de esos dos bancos estaba en el fichero de etiquetas. Un banco de 24
+  casos, verde, con dos líneas del criterio que cualquiera podía borrar mañana sin que nadie se
   enterase. La señal de nombre no es un detalle: es la que más peso tiene en el recuento.
 
 Se cerró antes de tocar el repositorio, con **dos casos nuevos que aíslan cada una de las dos
@@ -226,18 +226,18 @@ formas** de cualquier otra señal que pudiera taparlas.
 
 El banco pasó de 24 a 26 casos.
 
-Los cuatro que faltan hasta 30 los añadió el empaquetado, y los dos últimos, hasta los 32 de hoy,
+Los cuatro que faltan hasta 30 los añadió el empaquetado. Los dos últimos, hasta los 32 de hoy,
 entraron al vigilar el censo de fixtures y la restauración del mutador. Cada uno cubre una pieza
 que en el árbol privado no existía o estaba clavada dentro del script: que los bancos plantados a
 propósito se cacen, que ningún banco de este repositorio se quede sin etiqueta, que la raíz de git
-no se invente cuando no hay ninguna, y que la exclusión declarada saque las rutas y las cuente
+no se invente cuando no hay ninguna y que la exclusión declarada saque las rutas y las cuente
 aparte. El comando de verificación de más abajo los enumera al ejecutarse.
 
 ### Lo que la mutación 6 de 6 no vio
 
 El día de publicar había tres verdes. El banco en 32. La mutación en 6 de 6. El acuerdo con las
 etiquetas en 9 de 9. Se le pidió entonces a un auditor externo que buscara con material que **no
-estaba en el banco**. Encontró dos defectos, y ninguno de los tres verdes podía verlos.
+estaba en el banco**. Encontró dos defectos y ninguno de los tres verdes podía verlos.
 
 - La señal de nombre casaba por subcadena. `test_protocolo_de_arranque` disparaba `NOMBRE_NEG`
   porque «protocolo» contiene «roto». `test_invalidate_cache_refreshes`, porque «invalidate»
@@ -258,14 +258,14 @@ su clase. Cada uno trae su control al lado, para que el arreglo no pueda ser dej
 Eso obliga a decir algo incómodo de la propia herramienta: **este detector cuenta qué bancos
 tienen un brazo negativo, y tener un brazo negativo no es discriminar.** Un banco puede llevar
 `assertFalse` y seguir pasando con el código roto. Lo que separa un banco de un adorno es mutar
-el código, y por eso la mutación viaja dentro del paquete:
+el código y por eso la mutación viaja dentro del paquete:
 
 ```
 python skills/detector-control-negativo/mutar.py
 ```
 
-**Seis sabotajes, y hoy se cazan los seis.** No hay que creérselo: el comando lo hace delante de
-quien lo lance, y deja el fichero medido restaurado al terminar y también si el proceso muere a
+**Seis sabotajes. Hoy se cazan los seis.** No hay que creérselo: el comando lo hace delante de
+quien lo lance y deja el fichero medido restaurado al terminar y también si el proceso muere a
 mitad, porque la copia intacta vive en disco y no en la memoria del programa.
 
 Y el mutador **falla cerrado**, que es la parte que más fácil se hace mal. Si el ancla de un
@@ -284,21 +284,21 @@ bancos con nombre y apellido, en la fila que la deja donde le toca: dentro de un
 cada afinado.
 
 Lo que sí puedes ejecutar es el ejemplo del principio, sobre este mismo repositorio y sin preparar
-nada. Da **9 etiquetas de 9 bancos, concordancia 9 de 9 y salida `0`**, y el «SIN control negativo
+nada. Da **9 etiquetas de 9 bancos, concordancia 9 de 9 y salida `0`**. El «SIN control negativo
 2 de 8» que sale ahí describe el árbol de juguete de `ejemplo/bancos/`, plantado banco a banco.
 
-De la pasada sobre el árbol privado hay una sola cosa que este repositorio defiende, y es una
+De la pasada sobre el árbol privado hay una sola cosa que este repositorio defiende, una
 propiedad del instrumento y no del árbol: **el detector concordó con las 30 etiquetas escritas a
 mano, 30 de 30**, sin un falso positivo ni un falso negativo. Eso se mide contra un objeto que no
 se mueve, mientras el recuento se mide contra un árbol al que ese día le entraron tres bancos. Es
-la diferencia entre las dos cifras, y es toda la tesis de la herramienta.
+la diferencia entre las dos cifras y es toda la tesis de la herramienta.
 
 Y dos límites que hay que decir antes de que alguien cite el número de la tabla:
 
 1. **Las etiquetas negativas son pocas.** Tres casos de «no lo tiene» no permiten afirmar una tasa
    de falsos negativos. Lo que sí está medido es que la parte nueva del criterio no rescata ni un
    banco sin que una etiqueta lo respalde.
-2. **El universo es lo que git publica, y el criterio es el nombre.** Un banco del árbol de
+2. **El universo es lo que git publica y el criterio es el nombre.** Un banco del árbol de
    trabajo que nadie ha añadido queda fuera. Un banco que no se llame `test_*.py`,
    `run_tests*.py` o `*_test.py` tampoco entra. Son dos suelos declarados.
 
@@ -317,9 +317,9 @@ cd tu-repositorio
 python ../detector-control-negativo/skills/detector-control-negativo/verificar_control_negativo.py --etiquetar
 ```
 
-La primera ejecución sale con `2` y está bien que lo haga: todavía no hay etiquetas, y sin ellas
+La primera ejecución sale con `2` y está bien que lo haga: todavía no hay etiquetas y sin ellas
 el recuento es una aproximación sin puntuar. El camino es `--etiquetar`, abrir a mano los ficheros
-que salgan, y escribir la etiqueta con su evidencia.
+que salgan y escribir la etiqueta con su evidencia.
 
 Ese rato es el trabajo. No hay atajo: medir un banco obliga a leerlo.
 
@@ -327,8 +327,8 @@ Ese rato es el trabajo. No hay atajo: medir un banco obliga a leerlo.
 |---|---|
 | `--raiz RUTA` | el árbol a medir; por defecto, la raíz git del directorio actual |
 | `--etiquetas FICHERO` | la verdad de referencia con la que se puntúa el detector |
-| `--excluir SUBCADENA` | deja fuera las rutas que la contengan; repetible, y se cuentan aparte |
-| `--listar` | cada banco con su veredicto, y cada veredicto con la señal que lo disparó |
+| `--excluir SUBCADENA` | deja fuera las rutas que la contengan; repetible y se cuentan aparte |
+| `--listar` | cada banco con su veredicto y cada veredicto con la señal que lo disparó |
 | `--etiquetar` | plantilla YAML de los bancos que aún no tienen etiqueta |
 
 La raíz se le pregunta a git (`git rev-parse --show-toplevel`) en vez de deducirla contando
@@ -343,7 +343,7 @@ python skills/detector-control-negativo/test_detector_control_negativo.py   # 38
 python skills/detector-control-negativo/mutar.py                           # 6 sabotajes
 ```
 
-**38 casos, y siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
+**38 casos. Siete de ellos son controles negativos marcados `CN`.** En un banco cuyo objeto es
 cazar bancos sin control negativo, no tenerlos sería la ironía más cara del repositorio. El que
 más vale es `test_cn1_prosa_con_no_y_sin_no_dispara`: comprueba que la señal de texto **no**
 dispara sobre prosa llena de «no» y «sin», que es exactamente cómo la primera versión acabó
@@ -351,7 +351,7 @@ marcando 129 bancos de 129.
 
 El banco mide dos objetos distintos a propósito. Los casos de fixture prueban el criterio con
 texto escrito a mano, para que el veredicto correcto sea evidente al leerlo. Los casos sobre el
-árbol lo prueban contra este repositorio de verdad, y exigen el censo de etiquetas **en las dos
+árbol lo prueban contra este repositorio de verdad y exigen el censo de etiquetas **en las dos
 direcciones**: ninguna etiqueta puede apuntar a un fichero que ya no existe, y ningún banco puede
 quedarse sin etiquetar. Sin la segunda, alguien añade un banco, no lo etiqueta, y la puntuación
 sigue saliendo perfecta sobre los que ya estaban: un instrumento midiéndose contra una muestra
@@ -369,14 +369,14 @@ Python 3.9 o superior, biblioteca estándar, sin red y sin nada que instalar. En
 todo Linux el intérprete se llama `python3`, no `python`: los comandos de esta página van con
 `python` porque se escribieron en Windows.
 
-Esa frase habla del **instrumento**, y conviene apurarla porque el repositorio no cumple lo mismo
+Esa frase habla del **instrumento**. Conviene apurarla porque el repositorio no cumple lo mismo
 que él. `verificar_control_negativo.py` y `mutar.py` no abren un socket: lo que necesitan se lo
 preguntan a `git` en local. El que sí sale a la red es `guardian_gemelo.py`, que consulta
 `api.github.com` para comparar este repositorio con su gemelo, y por eso trae una vía local con
 `GEMELO_LOCAL` para poder ejercitarlo sin ella. No forma parte de la skill ni de la medición.
 
 Ese 3.9 está **declarado y todavía no certificado**. En local se ha ejecutado con Python 3.10, 3.13
-y 3.14, las tres sobre Windows, y en ninguna versión por debajo de 3.10, que es la que importaba.
+y 3.14, las tres sobre Windows, pero en ninguna versión por debajo de 3.10, que es la que importaba.
 Un repaso del código no encontró sintaxis ni biblioteca por encima de 3.9,
 pero eso encuentra incompatibilidades y no certifica compatibilidad. Lo que la certifica es la
 matriz de CI (3.9, 3.11 y 3.13 sobre Windows, Linux y macOS) dando verde, y hasta el primer push
