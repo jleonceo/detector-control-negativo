@@ -108,13 +108,13 @@ tiempo y están dentro del código:
 
 ## Lo que esta skill NO hace
 
-- **No arregla bancos.** No escribe en ninguno ni propone parches.
-- **No dice si un banco es bueno.** Tener una aserción negativa no prueba que discrimine: un
+- No arregla bancos. No escribe en ninguno ni propone parches.
+- No dice si un banco es bueno. Tener una aserción negativa no prueba que discrimine: un
   banco puede llevar `assertFalse` y seguir pasando con el código roto. Eso lo dice mutar el
   código y ver si el banco cae.
-- **No cuenta lo que git no publica.** El universo sale de `git ls-files`, así que un banco del
+- No cuenta lo que git no publica. El universo sale de `git ls-files`, así que un banco del
   árbol de trabajo que nadie ha añadido queda fuera. Es un suelo declarado.
-- **No entra por el nombre de un fichero que no parezca un banco.** El criterio es
+- No entra por el nombre de un fichero que no parezca un banco. El criterio es
   `test_*.py`, `run_tests*.py` o `*_test.py`. Otro esquema de nombres necesita otro criterio.
 
 ## El método completo

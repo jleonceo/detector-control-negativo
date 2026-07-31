@@ -190,10 +190,35 @@ def es_agregador(texto):
     return len(sitios) <= 3
 
 
+# Una MARCA que va precedida de una negacion NO es una marca: es la confesion de que falta.
+# Un ataque adversarial del 31/07/2026 colo un fichero con el docstring "A este banco le falta
+# el control negativo" y el detector lo dio por bueno. La frase que declara la ausencia era
+# justo la que lo absolvia. Y `CLIENTE = "CN1"`, un codigo de cliente, tambien lo absolvia.
+_RE_AUSENCIA = re.compile(
+    r"\b(falta|faltan|sin|no\s+(hay|tiene|lleva|existe)|carece|pendiente|a\s+medias|todo|fixme|"
+    r"por\s+(hacer|escribir|a[nñ]adir)|deberia\s+(tener|llevar))\b", re.I)
+# `CN1` suelto solo cuenta en un comentario. Como valor de una constante es un codigo cualquiera.
+_RE_CN_CORTO = re.compile(r"\bCN\d")
+
+
+def _marca_valida(texto):
+    """MARCA, mirando linea a linea en vez de sobre el fichero entero."""
+    for linea in texto.splitlines():
+        m = _RE_MARCA.search(linea)
+        if not m:
+            continue
+        if _RE_AUSENCIA.search(linea):
+            continue                      # declara que le falta, no que lo tiene
+        if _RE_CN_CORTO.search(m.group(0)) and "#" not in linea and '"""' not in linea:
+            continue                      # `CN1` fuera de un comentario no es una marca
+        return True
+    return False
+
+
 def senales_de(texto):
     """Las senales que dispara un banco, en orden. Lista vacia = sin control negativo."""
     encontradas = []
-    if _RE_MARCA.search(texto):
+    if _marca_valida(texto):
         encontradas.append("MARCA")
     sitios = [l for l in texto.splitlines() if _RE_SITIO_ASERCION.search(l)]
     unidos = "\n".join(sitios)
@@ -204,6 +229,19 @@ def senales_de(texto):
     if _RE_NOMBRE_NEG.search(texto):
         encontradas.append("NOMBRE_NEG")
     etiquetas = "\n".join(l for l in texto.splitlines() if _RE_SITIO_ETIQUETA.search(l))
+    # HUECO CONOCIDO Y SIN CERRAR (31/07/2026). Estas dos formas se buscan sobre el fichero
+    # ENTERO, asi que una constante del modulo vale como veredicto malo: un ataque adversarial
+    # colo `ESTADOS = ("OK", "KO")` y `AVISO = "NO borrar este fichero"` en dos bancos que no
+    # tienen un solo caso negativo dentro, y los dos salieron absueltos.
+    #
+    # SE INTENTO CERRAR RESTRINGIENDOLAS a las lineas de asercion y de etiqueta, y el arreglo
+    # se revirtio porque rompia un caso legitimo del banco: `test_ca2_etiqueta_en_tabla_lejos_
+    # de_su_check`, o sea la tabla de casos donde el veredicto malo vive en la lista de datos y
+    # no en la linea que asierta. Esa tabla es una de las cinco senales documentadas.
+    #
+    # Lo que falta es el discriminador entre las dos cosas: una tabla empareja el veredicto con
+    # un dato de entrada dentro de una estructura de varios elementos; una constante suelta no.
+    # Hasta tenerlo con su caso de prueba, el hueco se declara en vez de taparse a medias.
     if (_RE_ETIQUETA_NEG.search(etiquetas)
             or _RE_NO_ENFATICO.search(texto)
             or _RE_VEREDICTO_MALO.search(texto)):
@@ -231,6 +269,18 @@ def analizar(raiz, excluir=()):
 
 # --- La verdad de referencia -------------------------------------------------------------
 
+def _clave_de(linea):
+    """La clave de una linea `clave: valor`, sin espacios sobrantes ni mayusculas.
+
+    Existe porque `tiene_control_negativo :` con un espacio delante de los dos puntos NO
+    empieza por `tiene_control_negativo:`, asi que el lector la ignoraba y perdia la entrada
+    entera sin decir nada. YAML acepta ese espacio; el lector tiene que aceptarlo tambien.
+    """
+    if ":" not in linea:
+        return ""
+    return linea.split(":", 1)[0].strip().strip("-").strip().lower()
+
+
 def leer_etiquetas(path=ETIQUETAS):
     """Lector minimo del YAML de etiquetas: {ruta: 'true'|'false'|'agregador'}.
 
@@ -240,12 +290,22 @@ def leer_etiquetas(path=ETIQUETAS):
     if not os.path.isfile(path):
         return {}
     etiquetas, actual = {}, None
+    abiertos, huerfanos = 0, []
     with open(path, encoding="utf-8", errors="replace") as fh:
         for linea in fh:
             l = linea.strip()
             if l.startswith("- banco:"):
+                # UNA ENTRADA SIN CERRAR NO SE PIERDE EN SILENCIO (31/07/2026, segunda pasada).
+                # El `actual` se sobrescribia aqui, asi que una entrada cuya clave de veredicto
+                # estuviera mal escrita (`tiene_control_negativo :` con un espacio, o en otro
+                # idioma) desaparecia sin un aviso. Un ataque adversarial escribio tres etiquetas
+                # y el programa leyo una, imprimiendo su veredicto de siempre. La verdad de
+                # referencia encogia sola, que es justo lo que este fichero existe para impedir.
+                if actual is not None:
+                    huerfanos.append(actual)
+                abiertos += 1
                 actual = l.split(":", 1)[1].strip().strip("\"'")
-            elif l.startswith("tiene_control_negativo:") and actual:
+            elif _clave_de(l) == "tiene_control_negativo" and actual:
                 valor = l.split(":", 1)[1].strip().lower()
                 # Se corta el comentario de la plantilla ANTES de juzgar el valor, para que
                 # `true   # true | false | agregador` valga y `# true | false` a secas no.
@@ -271,6 +331,16 @@ def leer_etiquetas(path=ETIQUETAS):
                         "se entiende no se convierte en 'false': se para, porque de ahi sale la "
                         "verdad con la que se puntua el detector."
                         % (path, clave, valor or "(vacio)"))
+    if actual is not None:
+        huerfanos.append(actual)
+    if huerfanos:
+        # Se para igual que ante un valor ilegible, y por la misma razon.
+        raise ValueError(
+            "en %s hay %d entrada(s) de %d sin su linea `tiene_control_negativo`: %s. "
+            "Revisa la clave (un espacio antes de los dos puntos, o el nombre cambiado) y "
+            "vuelve a lanzarlo. Una etiqueta que no se lee no se descarta en silencio: la "
+            "muestra con la que se puntua el detector encogeria sin que nadie lo viera."
+            % (path, len(huerfanos), abiertos, ", ".join(huerfanos[:5])))
     return etiquetas
 
 

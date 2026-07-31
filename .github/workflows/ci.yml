@@ -8,12 +8,11 @@ name: ci
 # distintas para llegar al mismo sitio. Y `--raiz` se resuelve con `git rev-parse`, que en un
 # runner recien clonado tampoco se comporta igual en los tres sistemas.
 #
-# AVISO HONESTO (31/07/2026): esta matriz no se ha ejecutado todavia. En local se ha probado con
-# Python 3.10, 3.13 y 3.14 en Windows, con nada por debajo de 3.10, y el README anuncia 3.9 o
-# superior. Un repaso del codigo
-# no encontro sintaxis ni biblioteca por encima de 3.9, pero eso encuentra incompatibilidades,
-# no certifica compatibilidad. Lo que la certifica es este fichero dando verde, y hasta el
-# primer push no lo ha dado. Cuando lo de, esta nota se corrige y no se borra.
+# AVISO HONESTO, CORREGIDO (31/07/2026): la nota anterior decia que esta matriz no se habia
+# ejecutado nunca, y prometia corregirse en vez de borrarse el dia que diera verde. Ese dia es
+# hoy. El primer push la puso en verde entera: nueve combinaciones de sistema y version (3.9,
+# 3.11 y 3.13 sobre Windows, Linux y macOS) mas el trabajo del gemelo. El suelo de 3.9 que el
+# README anuncia ya no es una lectura del codigo: esta certificado por ejecucion.
 
 on:
   push:

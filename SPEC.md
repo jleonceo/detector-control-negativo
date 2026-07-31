@@ -1,4 +1,4 @@
-# Especificación: detector de bancos sin control negativo
+# Especificación: detector de suites sin control negativo
 
 > Se escribió antes del código y se aceptó antes de escribirlo. Va en el repositorio porque los
 > criterios de aceptación son lo que hace comprobable el resto: sin ellos, «el detector funciona»
@@ -6,11 +6,11 @@
 
 ## El problema que resuelve
 
-Un banco de pruebas que solo comprueba que lo bueno pasa da verde con el código bueno y con el
+Una suite que solo comprueba que lo bueno pasa da verde con el código bueno y con el
 roto. Saber cuántos hay así es útil. La primera vez que se intentó salió mal de una forma que
 conviene no repetir, y de ahí sale todo lo demás de este documento.
 
-| versión | qué añadió al criterio | bancos sin brazo negativo |
+| versión | qué añadió al criterio | suites sin brazo negativo |
 |---|---|---:|
 | v1 | la marca explícita | 112 de 131 |
 | v2 | `assertNot*`, `assertFalse`, `assertRaises` | 77 |
@@ -29,7 +29,7 @@ se puntúa contra una verdad de referencia en vez de juzgarse por el tamaño de 
 ## Población: siempre los tres números
 
 El informe declara **tres** cifras y nunca una: lo que hay, lo que ha decidido dejar fuera y con
-qué criterio. Decir «131 bancos» sin lo demás es lo que hace que una cifra parezca más firme de lo
+qué criterio. Decir «131 suites» sin lo demás es lo que hace que una cifra parezca más firme de lo
 que es.
 
 Y ese ejemplo no está elegido al azar. El 131 de la fila v1 de la tabla de arriba y el 131 de este
@@ -38,17 +38,17 @@ agregadores iban dentro del recuento y la exclusión de copias no existía. Dos 
 el mismo árbol, con dos poblaciones detrás, es la forma más barata de fabricar una serie que
 parece continua.
 
-- **Universo:** ficheros versionados en git (`git ls-files`) cuyo nombre encaja con `test_*.py`,
-  `run_tests*.py` o `*_test.py`.
-- **Fuera a propósito:** lo que no está versionado (carpetas de trabajo, `__pycache__`, copias) y
-  lo que se declare con `--excluir`, pensado para las copias de un repositorio que ya se mide en
-  su origen.
-- **Criterio:** el nombre y no el contenido. Un banco que no se llame así no entra. Es un suelo
+- El universo son los ficheros versionados en git (`git ls-files`) cuyo nombre encaja con
+  `test_*.py`, `run_tests*.py` o `*_test.py`.
+- Queda fuera a propósito lo que no está versionado (carpetas de trabajo, `__pycache__`, copias)
+  y lo que se declare con `--excluir`, pensado para las copias de un repositorio que ya se mide
+  en su origen.
+- El criterio es el nombre y no el contenido. Una suite que no se llame así no entra. Es un suelo
   declarado y no un descuido.
 
 ## Señales: qué cuenta como brazo negativo
 
-Cada banco se clasifica y **el informe dice qué señal disparó**, no solo el veredicto. Sin eso, la
+Cada suite se clasifica y **el informe dice qué señal disparó**, no solo el veredicto. Sin eso, la
 cifra vuelve a ser un contador sin su objeto y nadie puede comprobarla.
 
 | señal | qué reconoce |
@@ -59,24 +59,24 @@ cifra vuelve a ser un contador sin su objeto y nadie puede comprobarla.
 | `NOMBRE_NEG` | nombres de caso con `_no_`, `_sin_`, `rechaza`, `bloquea`, `falla`, `invalido` |
 | `ETIQUETA_NEG` | la etiqueta del caso declara el brazo negativo, o afirma el veredicto malo |
 
-Un banco tiene brazo negativo si dispara **al menos una**. La lista es ampliable; lo que no es
+Una suite tiene brazo negativo si dispara **al menos una**. La lista es ampliable; lo que no es
 ampliable sin pagar el precio es añadir una señal y quedarse con el número nuevo sin puntuarlo.
 
 ## La verdad de referencia es la pieza nueva
 
-El fichero de etiquetas guarda bancos etiquetados **a mano**, cada uno con:
+El fichero de etiquetas guarda suites etiquetadas **a mano**, cada uno con:
 
-    - banco: ruta/relativa/run_tests_x.py
+    - suite: ruta/relativa/run_tests_x.py
       tiene_control_negativo: true | false | agregador
       evidencia: "la línea o el nombre de caso que lo demuestra"
       etiquetado_el: 2026-07-30
 
-Con eso, una versión nueva del criterio se puntúa: **falsos positivos** (bancos que el detector
+Con eso, una versión nueva del criterio se puntúa: **falsos positivos** (suites que el detector
 señala y las etiquetas dicen que sí tienen brazo negativo) y **falsos negativos** (los que deja
 pasar y no lo tienen). Un criterio que baja el recuento total **subiendo** los falsos negativos es
 peor, aunque el titular sea más bonito.
 
-`agregador` es un tercer valor y no un sí ni un no: son ficheros que se llaman como un banco y no
+`agregador` es un tercer valor y no un sí ni un no: son ficheros que se llaman como una suite y no
 tienen un solo caso propio, porque descubren otros y los lanzan. Contarlos entre los carentes es
 el mismo error de objeto que costó dos de las cifras de la tabla de arriba.
 
@@ -84,16 +84,16 @@ el mismo error de objeto que costó dos de las cifras de la tabla de arriba.
 
 1. **CA1 · el universo se declara.** El informe imprime los tres números: encontrados, excluidos
    y el criterio de exclusión.
-2. **CA2 · cada señalado trae su motivo.** Con `--listar`, cada banco sin brazo negativo sale con
-   su ruta; cada banco con brazo negativo sale con la señal que disparó.
+2. **CA2 · cada señalado trae su motivo.** Con `--listar`, cada suite sin brazo negativo sale con
+   su ruta; cada suite con brazo negativo sale con la señal que disparó.
 3. **CA3 · el detector se mide contra las etiquetas** y publica su acuerdo con ellas. Sin
    etiquetas, lo dice y no finge una puntuación.
 4. **CA4 · el código de salida habla del INSTRUMENTO y no del repositorio.** `0` concuerda con
    todas las etiquetas, `1` discrepa de alguna, `2` no hay etiquetas con las que medirse. El
-   recuento de bancos se **reporta** y no tumba nada: actuar sobre una cifra que no ha convergido
+   recuento de suites se **reporta** y no tumba nada: actuar sobre una cifra que no ha convergido
    es justo el error que este detector existe para no repetir.
-5. **CA5 · sin universo, no hay veredicto.** Si el descubrimiento devuelve cero bancos, o si no
-   hay ninguna raíz de git desde donde se lanza, sale con `3` en vez de decir «0 bancos sin brazo
+5. **CA5 · sin universo, no hay veredicto.** Si el descubrimiento devuelve cero suites, o si no
+   hay ninguna raíz de git desde donde se lanza, sale con `3` en vez de decir «0 suites sin brazo
    negativo», que es el falso verde de manual.
 6. **CA6 · determinista y sin red.** Ni modelo de lenguaje ni consultas externas. Dos ejecuciones
    seguidas sobre el mismo árbol dan el mismo resultado.
@@ -107,28 +107,28 @@ Las tres que entraron al etiquetar a mano, con el caso que las exigió:
 
 | señal nueva | el caso etiquetado que la exigió |
 |---|---|
-| `is False` dentro de `ESPERA_CERO` | un banco con cinco `check(permitir is False, "BLOQUEA…")` |
-| `not in` dentro de `ESPERA_CERO` | un banco con `check("F" not in filas, …)` |
-| `ETIQUETA_NEG` | un banco cuya tabla de casos dice «NO toca un mensaje que ya está limpio» y otro que afirma el veredicto `NO_CONFIA` |
+| `is False` dentro de `ESPERA_CERO` | una suite con cinco `check(permitir is False, "BLOQUEA…")` |
+| `not in` dentro de `ESPERA_CERO` | una suite con `check("F" not in filas, …)` |
+| `ETIQUETA_NEG` | una suite cuya tabla de casos dice «NO toca un mensaje que ya está limpio» y otro que afirma el veredicto `NO_CONFIA` |
 
-Y la comprobación que hace honesto el conjunto: **los once bancos que la señal nueva rescata están
+Y la comprobación que hace honesto el conjunto: **los once suites que la señal nueva rescata están
 los once en la lista etiquetada a mano.** No rescata ni uno sin verificar.
 
 ## Lo que la cifra NO autoriza a decir
 
 Dos límites, dichos antes de que alguien cite el número:
 
-1. **Las etiquetas negativas son pocas.** Con tres casos de «no lo tiene» no se puede afirmar una
-   tasa de falsos negativos: el detector podría estar dando por bueno a bancos que no lo son y las
+1. Las etiquetas negativas son pocas. Con tres casos de «no lo tiene» no se puede afirmar una
+   tasa de falsos negativos: el detector podría estar dando por bueno a suites que no lo son y las
    etiquetas no lo verían. Lo que sí está medido es que su parte nueva no rescata nada sin
    verificar.
-2. **Tener una aserción negativa no es discriminar.** Un banco puede llevar `assertFalse` y seguir
+2. Tener una aserción negativa no es discriminar. Una suite puede llevar `assertFalse` y seguir
    pasando con el código roto. Eso lo dice mutar el código, no leerlo.
 
 ## Lo que este detector no hace
 
-- **No arregla bancos.** No escribe en ninguno ni propone parches.
-- **No dice si un banco es bueno.** Para eso está mutar el código y ver si el banco cae, que es
-  otro instrumento y otro coste.
-- **No cuenta lo que git no publica.** Un banco del árbol de trabajo que nadie ha añadido queda
+- No arregla suites. No escribe en ninguno ni propone parches.
+- No dice si una suite es bueno. Para eso está mutar el código y ver si la suite cae, que es otro
+  instrumento y otro coste.
+- No cuenta lo que git no publica. Una suite del árbol de trabajo que nadie ha añadido queda
   fuera. Es un suelo declarado.
