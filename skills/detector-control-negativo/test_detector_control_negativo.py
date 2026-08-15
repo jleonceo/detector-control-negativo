@@ -171,6 +171,37 @@ def main():
 """
 
 
+# HAL-359. La sonda de una auditoria independiente sobre un arbol de mentira. La constante
+# empieza por `NO_`, esta en mayusculas y al principio de linea, o sea que cumple el ancla
+# entera. No es una coleccion: es un interruptor de configuracion. Y el banco que la lleva
+# tiene una sola asercion positiva, o sea ningun control negativo en ninguna parte.
+_NO_ES_COLECCION_SINO_INTERRUPTOR = """
+NO_PARAR = True
+
+def test_algo():
+    assert suma(2, 2) == 4
+"""
+
+# La segunda mitad de HAL-359. La constante SI es una coleccion con contenido, pero nadie la
+# usa: ninguna asercion la menciona. Una lista declarada que no se ejercita no es un brazo
+# negativo, es una lista muerta.
+_COLECCION_QUE_NADIE_USA = """
+NO_COPIAS = ["backup_diario.py", "informe.md"]
+
+def test_algo():
+    assert suma(2, 2) == 4
+"""
+
+# El ancla acepta `^\\s*`, asi que una variable LOCAL indentada dentro de una funcion dispara
+# la senal, mientras la cabecera promete constantes de MODULO. Ya pasaba sobre un fichero del
+# arbol real (`NO_EXISTE` en `run_tests_auditar.py`).
+_LOCAL_INDENTADA_NO_DECLARA_ESTRUCTURA = """
+def test_algo():
+    NO_EXISTE = "/ruta/que/no/esta"
+    assert leer(NO_EXISTE) is None
+"""
+
+
 class Senales(unittest.TestCase):
     """CA2 · cada veredicto trae su motivo, y el motivo es el correcto."""
 
@@ -218,6 +249,28 @@ class Senales(unittest.TestCase):
 
     def test_ca2_afirmar_el_veredicto_malo(self):
         self.assertIn("ETIQUETA_NEG", det.senales_de(_CON_VEREDICTO_MALO))
+
+    def test_ca2_hal359_una_constante_que_no_es_coleccion_no_absuelve(self):
+        # `NO_PARAR = True` cumple el ancla entera sin ser una coleccion. La senal daba por
+        # bueno un banco con una sola asercion positiva.
+        self.assertNotIn("COLECCION_NEG",
+                         det.senales_de(_NO_ES_COLECCION_SINO_INTERRUPTOR))
+
+    def test_ca2_hal359_una_coleccion_que_nadie_usa_no_absuelve(self):
+        # Declarada y con contenido, pero ninguna asercion la toca. Una lista que no se
+        # ejercita no prueba que exista el brazo negativo.
+        self.assertNotIn("COLECCION_NEG", det.senales_de(_COLECCION_QUE_NADIE_USA))
+
+    def test_ca2_hal359_una_local_indentada_no_declara_la_estructura(self):
+        # La cabecera de la senal promete constantes de MODULO. El ancla aceptaba sangria.
+        self.assertNotIn("COLECCION_NEG",
+                         det.senales_de(_LOCAL_INDENTADA_NO_DECLARA_ESTRUCTURA))
+
+    def test_ca2_hal359_el_caso_legitimo_sigue_disparando(self):
+        # EL CONTROL QUE IMPIDE ARREGLAR DE MAS. `_CON_COLECCION_NEG` es el hallazgo que dio
+        # origen a la senal: dos listas de modulo, las dos recorridas por el cuerpo. Si el
+        # arreglo de HAL-359 lo apagara, habria cerrado la puerta tapiando la casa.
+        self.assertIn("COLECCION_NEG", det.senales_de(_CON_COLECCION_NEG))
 
 
 class ControlesNegativos(unittest.TestCase):
