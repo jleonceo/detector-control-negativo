@@ -135,6 +135,42 @@ def test_escribe_el_fichero():
 '''
 
 
+# --- HAL-350 (15/08/2026) · el brazo negativo escrito como SEGUNDA COLECCION -------------
+# La forma de `run_tests_higiene_backup.py`, un banco real del proyecto que motivo el
+# hallazgo: dos listas, una con lo que debe cazar y otra con lo que NO, mas un veredicto
+# etiquetado por el SENTIDO del fallo. Las cinco senales anteriores no lo veian: no hay
+# `def test_no_*`, no hay assert, y la unica cadena con NO esta en un mensaje de fallo.
+# El banco quedaba acusado teniendo control negativo de libro.
+_CON_COLECCION_NEG = """
+COPIAS = ["backup_1.txt", "antes_de.txt"]
+NO_COPIAS = ["backup_diario.py", "informe.md"]
+
+def main():
+    fallos = []
+    for n in COPIAS:
+        if not es_backup(n):
+            fallos.append(("FALSO NEGATIVO (copia que se cuela)", n))
+    for n in NO_COPIAS:
+        if es_backup(n):
+            fallos.append(("FALSO POSITIVO (acusa a un fichero bueno)", n))
+    return 1 if fallos else 0
+"""
+
+# CONTROL NEGATIVO DE LA SENAL NUEVA. Una coleccion cuyo nombre EMPIEZA por algo parecido
+# pero no declara ningun brazo negativo. Sin este caso, anclar mal la palabra devolveria el
+# defecto de subcadena que una auditoria independiente encontro el 31/07.
+_SIN_COLECCION_NEG = """
+NOMBRES = ["uno", "dos"]
+NOTAS = ["tres"]
+NOVEDADES = ["cuatro"]
+
+def main():
+    for n in NOMBRES:
+        procesa(n)
+    return 0
+"""
+
+
 class Senales(unittest.TestCase):
     """CA2 · cada veredicto trae su motivo, y el motivo es el correcto."""
 
@@ -169,6 +205,16 @@ class Senales(unittest.TestCase):
     def test_ca2_etiqueta_en_tabla_lejos_de_su_check(self):
         # La etiqueta del caso vive en una tabla de casos, no en la linea de la llamada.
         self.assertIn("ETIQUETA_NEG", det.senales_de(_CON_ETIQUETA_TABLA))
+
+    def test_ca2_coleccion_negativa_es_control_negativo(self):
+        # HAL-350. Dos listas y un veredicto por SENTIDO del fallo es control negativo, y
+        # ninguna de las cinco senales anteriores lo veia.
+        self.assertIn("COLECCION_NEG", det.senales_de(_CON_COLECCION_NEG))
+
+    def test_ca2_coleccion_parecida_no_dispara(self):
+        # El control de la senal nueva: `NOMBRES`, `NOTAS` y `NOVEDADES` empiezan por `NO`
+        # y no declaran ningun brazo negativo. Anclar por subcadena las daria por buenas.
+        self.assertNotIn("COLECCION_NEG", det.senales_de(_SIN_COLECCION_NEG))
 
     def test_ca2_afirmar_el_veredicto_malo(self):
         self.assertIn("ETIQUETA_NEG", det.senales_de(_CON_VEREDICTO_MALO))
