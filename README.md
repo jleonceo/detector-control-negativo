@@ -12,7 +12,7 @@ la clave del YAML, los llama `banco`.
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![sin dependencias](https://img.shields.io/badge/dependencias-ninguna-brightgreen)
-![38 casos](https://img.shields.io/badge/banco-38%20casos-brightgreen)
+![44 casos](https://img.shields.io/badge/banco-44%20casos-brightgreen)
 ![mutación 6/6](https://img.shields.io/badge/mutaci%C3%B3n-6%2F6-brightgreen)
 ![licencia MIT](https://img.shields.io/badge/licencia-MIT-lightgrey)
 [![ci](https://github.com/jleonceo/detector-control-negativo/actions/workflows/ci.yml/badge.svg)](https://github.com/jleonceo/detector-control-negativo/actions/workflows/ci.yml)
@@ -345,11 +345,11 @@ palabra.
 ### Verificación
 
 ```bash
-python skills/detector-control-negativo/test_detector_control_negativo.py   # 38 casos
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 44 casos
 python skills/detector-control-negativo/mutar.py                           # 6 sabotajes
 ```
 
-**38 casos. Siete de ellos son controles negativos marcados `CN`.** En una suite cuya objeto es
+**44 casos. Siete de ellos son controles negativos marcados `CN`.** En una suite cuyo objeto es
 cazar suites sin control negativo, no tenerlos sería la ironía más cara del repositorio. El que
 más vale es `test_cn1_prosa_con_no_y_sin_no_dispara`: comprueba que la señal de texto **no**
 dispara sobre prosa llena de «no» y «sin», que es exactamente cómo la primera versión acabó
@@ -372,7 +372,7 @@ este repositorio persigue.
 ### Requisitos
 
 Python 3.9 o superior, biblioteca estándar, sin red y sin nada que instalar. Ese «nada que
-instalar» cubre el instrumento y su batería de 38 casos, que se ejecutan con `python` a secas. El
+instalar» cubre el instrumento y su batería de 44 casos, que se ejecutan con `python` a secas. El
 único comando de esta página que pide algo de fuera es el `pytest` con el que se comprueba un clon
 recién hecho, y el propio CI lo instala aparte. En macOS y en casi
 todo Linux el intérprete se llama `python3`, no `python`: los comandos de esta página van con
@@ -693,11 +693,11 @@ word.
 ### Verification
 
 ```bash
-python skills/detector-control-negativo/test_detector_control_negativo.py   # 38 cases
+python skills/detector-control-negativo/test_detector_control_negativo.py   # 44 cases
 python skills/detector-control-negativo/mutar.py                           # 6 sabotages
 ```
 
-**38 cases, seven of them negative controls marked `CN`.** In a test suite whose whole purpose is
+**44 cases, seven of them negative controls marked `CN`.** In a test suite whose whole purpose is
 catching test suites without negative controls, having none would be the most expensive irony in the
 repository. The one that matters most is `test_cn1_prosa_con_no_y_sin_no_dispara`: it checks that
 the text signal does **not** fire on prose full of "no" and "sin", which is exactly how the first
