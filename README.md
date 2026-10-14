@@ -1,5 +1,8 @@
 # detector-control-negativo
 
+> Este repositorio cuenta el método y las cifras. Para instalar la herramienta como plugin de Claude Code, usa su gemelo [skill-detector-control-negativo](https://github.com/jleonceo/skill-detector-control-negativo).  
+> *This repository holds the method and the figures. To install the tool as a Claude Code plugin, use its twin [skill-detector-control-negativo](https://github.com/jleonceo/skill-detector-control-negativo).*
+
 **Tu suite de pruebas está verde. La pregunta que nadie hace es si esa suite sabría ponerse roja.
 Una suite que solo comprueba que lo bueno pasa aprueba igual al código bueno y al roto. Esta
 herramienta cuenta cuántos hay así en un repositorio, dice cuáles y por qué. Y se puntúa a sí
